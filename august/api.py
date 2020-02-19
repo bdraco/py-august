@@ -24,7 +24,6 @@ from august.lock import (
     LockDetail,
     determine_lock_status,
     determine_door_state,
-    door_state_to_string,
 )
 from august.pin import Pin
 
@@ -346,7 +345,6 @@ def _raise_response_exceptions(response):
 def _convert_lock_result_to_activities(lock_json_dict):
     activities = []
     lock_info_json_dict = lock_json_dict.get("info", {})
-    lock_status = determine_lock_status(lock_json_dict.get("status"))
     lock_id = lock_info_json_dict.get("LockID")
     lock_action_text = lock_info_json_dict.get("action")
     activity_timestamp = _timestamp_datetime_string(
