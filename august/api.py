@@ -110,7 +110,9 @@ class Api:
 
         return response
 
-    def validate_verification_code(self, access_token, login_method, username, verification_code):
+    def validate_verification_code(
+        self, access_token, login_method, username, verification_code
+    ):
         response = self._call_api(
             "post",
             API_VALIDATE_VERIFICATION_CODE_URLS[login_method],
@@ -174,20 +176,6 @@ class Api:
                 activities.append(activity)
 
         return activities
-
-    def _activity_from_dict(activity_dict):
-	action = activity_dict.get("action")
-
-	if action in ACTIVITY_ACTIONS_DOORBELL_DING:
-	    return DoorbellDingActivity(activity_dict)
-	elif action in ACTIVITY_ACTIONS_DOORBELL_MOTION:
-	    return DoorbellMotionActivity(activity_dict)
-	elif action in ACTIVITY_ACTIONS_DOORBELL_VIEW:
-	    return DoorbellViewActivity(activity_dict)
-	elif action in ACTIVITY_ACTIONS_LOCK_OPERATION:
-	    return LockOperationActivity(activity_dict)
-	elif action in ACTIVITY_ACTIONS_DOOR_OPERATION:
-	    return DoorOperationActivity(activity_dict) 
 
     def get_locks(self, access_token):
         json_dict = self._call_api(
@@ -262,7 +250,6 @@ class Api:
     def lock_as_activities(self, access_token, lock_id):
         json_dict = self._lock(access_token, lock_id)
         return _convert_lock_result_to_activities(json_dict)
-
 
     def _unlock(self, access_token, lock_id):
         json_dict = self._call_api(
@@ -358,38 +345,55 @@ def _raise_response_exceptions(response):
         raise err
 
 
-def convert_lock_result_to_activities(lock_json_dict)
+def _convert_lock_result_to_activities(lock_json_dict):
     activities = []
-    lock_info_json_dict = lock_json_dict.get("info",{}) 
+    lock_info_json_dict = lock_json_dict.get("info", {})
     lock_status = determine_lock_status(lock_json_dict.get("status"))
     lock_id = lock_info_json_dict.get("LockID")
-    activity_timestamp = _timestamp_datetime_string(lock_info_json_dict.get("startTime"))
+    lock_action_text = lock_info_json_dict.get("action")
+    activity_timestamp = _timestamp_datetime_string(
+        lock_info_json_dict.get("startTime")
+    )
+    door_state = determine_door_state(lock_json_dict.get("doorState"))
 
-    activity_lock_dict = activity_from_dict({
-            "entities": {
-               "device": lock_id
-            },
-            "dateTime": activity_timestamp,
-            "action":  lock_info_json_dict.get("action")
-    })
+    activity_lock_dict = _map_lock_result_to_activity(
+        lock_id, activity_timestamp, lock_action_text
+    )
     activities.append(activity_lock_dict)
 
-    door_state_text = lock_json_dict.get("doorState")
-    if door_state_text:
-        door_state = determine_door_state(door_state_text)
-        if (door_state != LockDoorStatus.UNKNOWN):
-            door_action = door_state_to_text(door_state)
-                    activity_door_dict = activity_from_dict({
-                            "entities": {
-                               "device": lock_id
-                            },
-                            "dateTime": activity_timestamp,
-                            "action":  door_action
-                    })
-                    activities.append(activity_door_dict)
+    if door_state != LockDoorStatus.UNKNOWN:
+        door_action_text = door_state_to_text(door_state)
+        activity_door_dict = _map_lock_result_to_activity(
+            lock_id, activity_timestamp, door_action_text
+        )
+        activities.append(activity_door_dict)
 
     return activities
 
+
+def _activity_from_dict(activity_dict):
+    action = activity_dict.get("action")
+
+    if action in ACTIVITY_ACTIONS_DOORBELL_DING:
+        return DoorbellDingActivity(activity_dict)
+    elif action in ACTIVITY_ACTIONS_DOORBELL_MOTION:
+        return DoorbellMotionActivity(activity_dict)
+    elif action in ACTIVITY_ACTIONS_DOORBELL_VIEW:
+        return DoorbellViewActivity(activity_dict)
+    elif action in ACTIVITY_ACTIONS_LOCK_OPERATION:
+        return LockOperationActivity(activity_dict)
+    elif action in ACTIVITY_ACTIONS_DOOR_OPERATION:
+        return DoorOperationActivity(activity_dict)
+
+
+def _map_lock_result_to_activity(lock_id, activity_timestamp, action_text):
+    mapped_dict = {
+        "entities": {"device": lock_id},
+        "dateTime": activity_timestamp,
+        "action": action_text,
+    }
+    return _activity_from_dict(mapped_dict)
+
+
 def _timestamp_datetime_string(datetime_string):
     return datetime.timestamp(dateutil.parser.parse(datetime_string))
-
