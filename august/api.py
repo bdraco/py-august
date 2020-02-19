@@ -233,15 +233,18 @@ class Api:
 
         return [Pin(pin_json) for pin_json in json_dict.get("loaded", [])]
 
-    def _lock(self, access_token, lock_id):
-        json_dict = self._call_api(
+    def _call_lock_operation(self, url_str, access_token, lock_id):
+        return self._call_api(
             "put",
-            API_LOCK_URL.format(lock_id=lock_id),
+            url_str.format(lock_id=lock_id),
             access_token=access_token,
             timeout=self._command_timeout,
         ).json()
 
         return determine_lock_status(json_dict.get("status"))
+
+    def _lock(self, access_token, lock_id):
+        return self._call_lock_operation(API_LOCK_URL, access_token, lock_id)
 
     def lock(self, access_token, lock_id):
         json_dict = self._lock(access_token, lock_id)
@@ -252,12 +255,7 @@ class Api:
         return _convert_lock_result_to_activities(json_dict)
 
     def _unlock(self, access_token, lock_id):
-        json_dict = self._call_api(
-            "put",
-            API_UNLOCK_URL.format(lock_id=lock_id),
-            access_token=access_token,
-            timeout=self._command_timeout,
-        ).json()
+        return self._call_lock_operation(API_UNLOCK_URL, access_token, lock_id)
 
     def unlock(self, access_token, lock_id):
         json_dict = self._unlock(access_token, lock_id)
