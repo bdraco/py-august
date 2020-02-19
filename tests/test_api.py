@@ -386,6 +386,77 @@ class TestApi(unittest.TestCase):
         self.assertEqual(LockDoorStatus.UNKNOWN, door_status)
 
     @requests_mock.Mocker()
+    def test_lock_from_fixture(self, mock):
+        lock_id = 1234
+        mock.register_uri(
+            "put",
+            API_LOCK_URL.format(lock_id=lock_id),
+            text=load_fixture("lock.json")
+        )
+
+        api = Api()
+        status = api.lock(ACCESS_TOKEN, lock_id)
+
+        self.assertEqual(LockStatus.LOCKED, status)
+
+    @requests_mock.Mocker()
+    def test_unlock_from_fixture(self, mock):
+        lock_id = 1234
+        mock.register_uri(
+            "put", API_UNLOCK_URL.format(lock_id=lock_id), text=load_fixture("unlock.json")
+        )
+
+        api = Api()
+        status = api.unlock(ACCESS_TOKEN, lock_id)
+
+        self.assertEqual(LockStatus.UNLOCKED, status)
+
+    @requests_mock.Mocker()
+    def test_lock_as_activities_from_fixture(self, mock):
+        lock_id = 1234
+        mock.register_uri(
+            "put",
+            API_LOCK_URL.format(lock_id=lock_id),
+            text=load_fixture("lock.json")
+        )
+
+        api = Api()
+        activities = api.lock_as_activities(ACCESS_TOKEN, lock_id)
+
+        self.assertEqual(len(activities),2)
+        self.assertIsInstance(activities[0], august.activity.LockOperationActivity)
+        self.assertEqual(activities[0].device_id,"ABC123")
+        self.assertEqual(activities[0].device_type,"lock")
+        self.assertEqual(activities[0].action,"lock")
+        self.assertIsInstance(activities[1], august.activity.DoorOperationActivity)
+        self.assertEqual(activities[1].device_id,"ABC123")
+        self.assertEqual(activities[1].device_type,"lock")
+        self.assertEqual(activities[1].action,"doorclosed")
+
+    @requests_mock.Mocker()
+    def test_unlock_as_activities_from_fixture(self, mock):
+        lock_id = 1234
+        mock.register_uri(
+            "put", API_UNLOCK_URL.format(lock_id=lock_id), text=load_fixture("unlock.json")
+        )
+
+        api = Api()
+        activities = api.unlock_as_activities(ACCESS_TOKEN, lock_id)
+
+        self.assertEqual(len(activities),2)
+        self.assertIsInstance(activities[0], august.activity.LockOperationActivity)
+        self.assertEqual(activities[0].device_id,"ABC123")
+        self.assertEqual(activities[0].device_type,"lock")
+        self.assertEqual(activities[0].action,"unlock")
+        self.assertEqual(activities[0].activity_start_time,dateutil.parser.parse("2020-02-19T19:44:26.745Z"))
+        self.assertEqual(activities[0].activity_end_time,dateutil.parser.parse("2020-02-19T19:44:26.745Z"))
+        self.assertIsInstance(activities[1], august.activity.DoorOperationActivity)
+        self.assertEqual(activities[1].device_id,"ABC123")
+        self.assertEqual(activities[1].device_type,"lock")
+        self.assertEqual(activities[1].action,"doorclosed")
+
+
+    @requests_mock.Mocker()
     def test_lock(self, mock):
         lock_id = 1234
         mock.register_uri(

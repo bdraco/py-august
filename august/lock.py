@@ -9,8 +9,8 @@ from august.keypad import KeypadDetail
 
 LOCKED_STATUS = ("locked", "kAugLockState_Locked")
 UNLOCKED_STATUS = ("unlocked", "kAugLockState_Unlocked")
-CLOSED_STATUS = ("closed", "kAugLockDoorState_Closed")
-OPEN_STATUS = ("open", "kAugLockDoorState_Open")
+CLOSED_STATUS = ("closed", "kAugLockDoorState_Closed", "kAugDoorState_Closed")
+OPEN_STATUS = ("open", "kAugLockDoorState_Open", "kAugDoorState_Open")
 
 
 class Lock(Device):
@@ -165,7 +165,7 @@ def determine_door_state(status):
 def door_state_to_string(door_status):
     """Returns the normalized value that determine_door_state represents."""
     if door_status == LockDoorStatus.OPEN:
-        return "open"
+        return "dooropen"
     if door_status == LockDoorStatus.CLOSED:
-        return "closed"
-    return "unknown"
+        return "doorclosed"
+    raise ValueError

@@ -344,7 +344,7 @@ def _raise_response_exceptions(response):
 def _convert_lock_result_to_activities(lock_json_dict):
     activities = []
     lock_info_json_dict = lock_json_dict.get("info", {})
-    lock_id = lock_info_json_dict.get("LockID")
+    lock_id = lock_info_json_dict.get("lockID")
     lock_action_text = lock_info_json_dict.get("action")
     activity_timestamp = _timestamp_datetime_string(
         lock_info_json_dict.get("startTime")
@@ -383,8 +383,9 @@ def _activity_from_dict(activity_dict):
 def _map_lock_result_to_activity(lock_id, activity_timestamp, action_text):
     """Create an august activity from a lock result."""
     mapped_dict = {
-        "entities": {"device": lock_id},
         "dateTime": activity_timestamp,
+        "deviceID": lock_id,
+        "deviceType": "lock",
         "action": action_text,
     }
     return _activity_from_dict(mapped_dict)
