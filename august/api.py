@@ -371,13 +371,13 @@ def _activity_from_dict(activity_dict):
 
     if action in ACTIVITY_ACTIONS_DOORBELL_DING:
         return DoorbellDingActivity(activity_dict)
-    elif action in ACTIVITY_ACTIONS_DOORBELL_MOTION:
+    if action in ACTIVITY_ACTIONS_DOORBELL_MOTION:
         return DoorbellMotionActivity(activity_dict)
-    elif action in ACTIVITY_ACTIONS_DOORBELL_VIEW:
+    if action in ACTIVITY_ACTIONS_DOORBELL_VIEW:
         return DoorbellViewActivity(activity_dict)
-    elif action in ACTIVITY_ACTIONS_LOCK_OPERATION:
+    if action in ACTIVITY_ACTIONS_LOCK_OPERATION:
         return LockOperationActivity(activity_dict)
-    elif action in ACTIVITY_ACTIONS_DOOR_OPERATION:
+    if action in ACTIVITY_ACTIONS_DOOR_OPERATION:
         return DoorOperationActivity(activity_dict)
 
 
