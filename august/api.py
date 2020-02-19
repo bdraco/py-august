@@ -346,18 +346,18 @@ def _convert_lock_result_to_activities(lock_json_dict):
     lock_info_json_dict = lock_json_dict.get("info", {})
     lock_id = lock_info_json_dict.get("lockID")
     lock_action_text = lock_info_json_dict.get("action")
-    activity_timestamp = _timestamp_datetime_string(
+    activity_epoch = _datetime_string_to_epoch(
         lock_info_json_dict.get("startTime")
     )
     activity_lock_dict = _map_lock_result_to_activity(
-        lock_id, activity_timestamp, lock_action_text
+        lock_id, activity_epoch, lock_action_text
     )
     activities.append(activity_lock_dict)
 
     door_state = determine_door_state(lock_json_dict.get("doorState"))
     if door_state != LockDoorStatus.UNKNOWN:
         activity_door_dict = _map_lock_result_to_activity(
-            lock_id, activity_timestamp, door_state_to_string(door_state)
+            lock_id, activity_epoch, door_state_to_string(door_state)
         )
         activities.append(activity_door_dict)
 
@@ -380,10 +380,10 @@ def _activity_from_dict(activity_dict):
     return None
 
 
-def _map_lock_result_to_activity(lock_id, activity_timestamp, action_text):
+def _map_lock_result_to_activity(lock_id, activity_epoch, action_text):
     """Create an august activity from a lock result."""
     mapped_dict = {
-        "dateTime": activity_timestamp,
+        "dateTime": activity_epoch,
         "deviceID": lock_id,
         "deviceType": "lock",
         "action": action_text,
@@ -391,5 +391,5 @@ def _map_lock_result_to_activity(lock_id, activity_timestamp, action_text):
     return _activity_from_dict(mapped_dict)
 
 
-def _timestamp_datetime_string(datetime_string):
-    return dateutil.parser.parse(datetime_string).timestamp()
+def _datetime_string_to_epoch(datetime_string):
+    return dateutil.parser.parse(datetime_string).timestamp() * 1000
