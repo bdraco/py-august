@@ -160,3 +160,11 @@ def determine_door_state(status):
     if status in OPEN_STATUS:
         return LockDoorStatus.OPEN
     return LockDoorStatus.UNKNOWN
+
+def door_state_to_string(door_status):
+    """Returns the normalized value that determine_door_state represents."""
+    if door_status == LockDoorStatus.OPEN:
+       return "open"
+    elif door_status == LockDoorStatus.CLOSED:
+       return "closed"
+    return "unknown"
