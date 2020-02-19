@@ -112,7 +112,9 @@ class Api:
 
         return response
 
-    def validate_verification_code(self, access_token, login_method, username, verification_code):
+    def validate_verification_code(
+        self, access_token, login_method, username, verification_code
+    ):
         response = self._call_api(
             "post",
             API_VALIDATE_VERIFICATION_CODE_URLS[login_method],
@@ -245,10 +247,21 @@ class Api:
         return self._call_lock_operation(API_LOCK_URL, access_token, lock_id)
 
     def lock(self, access_token, lock_id):
+        """Execute a remote lock operation.
+
+        Returns a LockStatus state.
+        """
         json_dict = self._lock(access_token, lock_id)
         return determine_lock_status(json_dict.get("status"))
 
-    def lock_as_activities(self, access_token, lock_id):
+    def lock_return_activities(self, access_token, lock_id):
+        """Execute a remote lock operation.
+
+        Returns an array of one or more august.activity.Activity objects
+
+        If the lock supports door sense one of the activities
+        will include the current door state.
+        """
         json_dict = self._lock(access_token, lock_id)
         return _convert_lock_result_to_activities(json_dict)
 
@@ -256,10 +269,21 @@ class Api:
         return self._call_lock_operation(API_UNLOCK_URL, access_token, lock_id)
 
     def unlock(self, access_token, lock_id):
+        """Execute a remote unlock operation.
+
+        Returns a LockStatus state.
+        """
         json_dict = self._unlock(access_token, lock_id)
         return determine_lock_status(json_dict.get("status"))
 
-    def unlock_as_activities(self, access_token, lock_id):
+    def unlock_return_activities(self, access_token, lock_id):
+        """Execute a remote lock operation.
+
+        Returns an array of one or more august.activity.Activity objects
+
+        If the lock supports door sense one of the activities
+        will include the current door state.
+        """
         json_dict = self._unlock(access_token, lock_id)
         return _convert_lock_result_to_activities(json_dict)
 
@@ -346,9 +370,7 @@ def _convert_lock_result_to_activities(lock_json_dict):
     lock_info_json_dict = lock_json_dict.get("info", {})
     lock_id = lock_info_json_dict.get("lockID")
     lock_action_text = lock_info_json_dict.get("action")
-    activity_epoch = _datetime_string_to_epoch(
-        lock_info_json_dict.get("startTime")
-    )
+    activity_epoch = _datetime_string_to_epoch(lock_info_json_dict.get("startTime"))
     activity_lock_dict = _map_lock_result_to_activity(
         lock_id, activity_epoch, lock_action_text
     )
