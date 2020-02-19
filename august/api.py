@@ -371,7 +371,7 @@ def _activity_from_dict(activity_dict):
         return LockOperationActivity(activity_dict)
     if action in ACTIVITY_ACTIONS_DOOR_OPERATION:
         return DoorOperationActivity(activity_dict)
-
+    return None
 
 def _map_lock_result_to_activity(lock_id, activity_timestamp, action_text):
     """Create an august activity from a lock result."""
