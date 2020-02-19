@@ -6,19 +6,28 @@ import dateutil.parser
 from requests import Session, request
 from requests.exceptions import HTTPError
 
-from august.activity import (ACTIVITY_ACTIONS_DOOR_OPERATION,
-                             ACTIVITY_ACTIONS_DOORBELL_DING,
-                             ACTIVITY_ACTIONS_DOORBELL_MOTION,
-                             ACTIVITY_ACTIONS_DOORBELL_VIEW,
-                             ACTIVITY_ACTIONS_LOCK_OPERATION,
-                             DoorbellDingActivity, DoorbellMotionActivity,
-                             DoorbellViewActivity, DoorOperationActivity,
-                             LockOperationActivity)
+from august.activity import (
+    ACTIVITY_ACTIONS_DOOR_OPERATION,
+    ACTIVITY_ACTIONS_DOORBELL_DING,
+    ACTIVITY_ACTIONS_DOORBELL_MOTION,
+    ACTIVITY_ACTIONS_DOORBELL_VIEW,
+    ACTIVITY_ACTIONS_LOCK_OPERATION,
+    DoorbellDingActivity,
+    DoorbellMotionActivity,
+    DoorbellViewActivity,
+    DoorOperationActivity,
+    LockOperationActivity,
+)
 from august.doorbell import Doorbell, DoorbellDetail
 from august.exceptions import AugustApiHTTPError
-from august.lock import (Lock, LockDetail, LockDoorStatus,
-                         determine_door_state, determine_lock_status,
-                         door_state_to_string)
+from august.lock import (
+    Lock,
+    LockDetail,
+    LockDoorStatus,
+    determine_door_state,
+    determine_lock_status,
+    door_state_to_string,
+)
 from august.pin import Pin
 
 HEADER_ACCEPT_VERSION = "Accept-Version"
@@ -369,6 +378,7 @@ def _activity_from_dict(activity_dict):
     if action in ACTIVITY_ACTIONS_DOOR_OPERATION:
         return DoorOperationActivity(activity_dict)
     return None
+
 
 def _map_lock_result_to_activity(lock_id, activity_timestamp, action_text):
     """Create an august activity from a lock result."""
