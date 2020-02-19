@@ -100,7 +100,7 @@ class TestLockDetail(unittest.TestCase):
             )
 
         # We do not always have the houseid so we do not throw
-        # as long as the deviceid is correct
+        # as long as the deviceid is correct since they are unique
         self.assertFalse(
             update_lock_detail_from_activity(
                 lock, closed_operation_wrong_houseid_activity
