@@ -6,7 +6,7 @@
       "lockStatusChanged" : true,
       "serial" : "serial",
       "startTime" : "2020-02-19T19:44:26.745Z",
-      "lockID" : "ABC123",
+      "lockID" : "ABC",
       "context" : {
          "transactionID" : "transid",
          "retryCount" : 1,
