@@ -1,30 +1,25 @@
+import datetime
 import json
 import logging
 import time
 
+import dateutil.parser
 from requests import Session, request
 from requests.exceptions import HTTPError
 
-from august.activity import (
-    ACTIVITY_ACTIONS_DOOR_OPERATION,
-    ACTIVITY_ACTIONS_DOORBELL_DING,
-    ACTIVITY_ACTIONS_DOORBELL_MOTION,
-    ACTIVITY_ACTIONS_DOORBELL_VIEW,
-    ACTIVITY_ACTIONS_LOCK_OPERATION,
-    DoorbellDingActivity,
-    DoorbellMotionActivity,
-    DoorbellViewActivity,
-    DoorOperationActivity,
-    LockOperationActivity,
-)
+from august.activity import (ACTIVITY_ACTIONS_DOOR_OPERATION,
+                             ACTIVITY_ACTIONS_DOORBELL_DING,
+                             ACTIVITY_ACTIONS_DOORBELL_MOTION,
+                             ACTIVITY_ACTIONS_DOORBELL_VIEW,
+                             ACTIVITY_ACTIONS_LOCK_OPERATION,
+                             DoorbellDingActivity, DoorbellMotionActivity,
+                             DoorbellViewActivity, DoorOperationActivity,
+                             LockOperationActivity)
 from august.doorbell import Doorbell, DoorbellDetail
 from august.exceptions import AugustApiHTTPError
-from august.lock import (
-    Lock,
-    LockDetail,
-    determine_lock_status,
-    determine_door_state,
-)
+from august.lock import (Lock, LockDetail, LockDoorStatus,
+                         determine_door_state, determine_lock_status,
+                         door_state_to_string)
 from august.pin import Pin
 
 HEADER_ACCEPT_VERSION = "Accept-Version"
@@ -240,8 +235,6 @@ class Api:
             timeout=self._command_timeout,
         ).json()
 
-        return determine_lock_status(json_dict.get("status"))
-
     def _lock(self, access_token, lock_id):
         return self._call_lock_operation(API_LOCK_URL, access_token, lock_id)
 
@@ -357,9 +350,8 @@ def _convert_lock_result_to_activities(lock_json_dict):
 
     door_state = determine_door_state(lock_json_dict.get("doorState"))
     if door_state != LockDoorStatus.UNKNOWN:
-        door_action_text = door_state_to_text(door_state)
         activity_door_dict = _map_lock_result_to_activity(
-            lock_id, activity_timestamp, door_action_text
+            lock_id, activity_timestamp, door_state_to_string(door_state)
         )
         activities.append(activity_door_dict)
 
