@@ -1,4 +1,3 @@
-import datetime
 import json
 import logging
 import time
@@ -384,4 +383,4 @@ def _map_lock_result_to_activity(lock_id, activity_timestamp, action_text):
 
 
 def _timestamp_datetime_string(datetime_string):
-    return datetime.timestamp(dateutil.parser.parse(datetime_string))
+    return dateutil.parser.parse(datetime_string).timestamp()
