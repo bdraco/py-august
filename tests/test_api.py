@@ -90,6 +90,10 @@ class TestApi(unittest.TestCase):
         self.assertEqual("doorbell_call_status_online", doorbell.status)
         self.assertEqual(96, doorbell.battery_level)
         self.assertEqual(True, doorbell.is_online)
+        self.assertEqual(False, doorbell.is_standby)
+        self.assertEqual(
+            dateutil.parser.parse("2017-12-10T08:01:35Z"), doorbell.image_created_at_datetime
+        )
         self.assertEqual(True, doorbell.has_subscription)
         self.assertEqual(
             "https://image.com/vmk16naaaa7ibuey7sar.jpg", doorbell.image_url

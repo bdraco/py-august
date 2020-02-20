@@ -97,11 +97,17 @@ class DoorbellMotionActivity(Activity):
 
         image = data.get("info", {}).get("image")
         self._image_url = None if image is None else image.get("secure_url")
+        self._image_created_at_datetime = None
+        if "created_at" in image:
+             self._image_created_at_datetime = dateutil.parser.parse(image["created_at"])
 
     @property
     def image_url(self):
         return self._image_url
 
+    @property
+    def image_created_at_datetime(self):
+        return self._image_created_at_datetime
 
 class DoorbellDingActivity(Activity):
     def __init__(self, data):
@@ -124,7 +130,6 @@ class DoorbellDingActivity(Activity):
     def activity_end_time(self):
         return self._activity_end_time
 
-
 class DoorbellViewActivity(Activity):
     def __init__(self, data):
         super().__init__(ActivityType.DOORBELL_VIEW, data)
@@ -145,7 +150,6 @@ class DoorbellViewActivity(Activity):
     @property
     def activity_end_time(self):
         return self._activity_end_time
-
 
 class LockOperationActivity(Activity):
     def __init__(self, data):

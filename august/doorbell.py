@@ -1,4 +1,5 @@
 from august.device import Device, DeviceDetail
+import dateutil.parser
 
 
 class Doorbell(Device):
@@ -54,6 +55,10 @@ class DoorbellDetail(DeviceDetail):
         recent_image = data.get("recentImage", {})
         self._image_url = recent_image.get("secure_url", None)
         self._has_subscription = data.get("dvrSubscriptionSetupDone", False)
+        self._image_created_at_datetime = None
+
+        if "created_at" in recent_image:
+            self._image_created_at_datetime = dateutil.parser.parse(recent_image["created_at"])
 
         self._battery_level = None
         if "telemetry" in data:
@@ -72,8 +77,24 @@ class DoorbellDetail(DeviceDetail):
         return self.status == "standby"
 
     @property
+    def image_created_at_datetime(self):
+        return self._image_created_at_datetime
+
+    @image_created_at_datetime.setter
+    def image_created_at_datetime(self, var):
+        """Update the doorbell image created_at datetime (usually form the activity log)."""
+        if not isinstance(var, datetime.date):
+            raise ValueError
+        self._image_created_at_datetime = var
+
+    @property
     def image_url(self):
         return self._image_url
+
+    @image_url.setter
+    def image_url(self, var):
+        """Update the doorbell image url (usually form the activity log)."""
+        self._image_url = var
 
     @property
     def battery_level(self):
