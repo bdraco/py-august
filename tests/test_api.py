@@ -92,7 +92,8 @@ class TestApi(unittest.TestCase):
         self.assertEqual(True, doorbell.is_online)
         self.assertEqual(False, doorbell.is_standby)
         self.assertEqual(
-            dateutil.parser.parse("2017-12-10T08:01:35Z"), doorbell.image_created_at_datetime
+            dateutil.parser.parse("2017-12-10T08:01:35Z"),
+            doorbell.image_created_at_datetime,
         )
         self.assertEqual(True, doorbell.has_subscription)
         self.assertEqual(
@@ -119,15 +120,9 @@ class TestApi(unittest.TestCase):
         self.assertEqual(96, doorbell.battery_level)
         self.assertEqual(True, doorbell.is_online)
         self.assertEqual(False, doorbell.is_standby)
-        self.assertEqual(
-            None, doorbell.image_created_at_datetime
-        )
+        self.assertEqual(None, doorbell.image_created_at_datetime)
         self.assertEqual(True, doorbell.has_subscription)
-        self.assertEqual(
-            None, doorbell.image_url
-        )
-
-
+        self.assertEqual(None, doorbell.image_url)
 
     @requests_mock.Mocker()
     def test_get_locks(self, mock):

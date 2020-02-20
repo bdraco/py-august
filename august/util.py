@@ -1,7 +1,11 @@
 import datetime
 
-from august.activity import (ACTIVITY_ACTION_STATES, DoorbellMotionActivity,
-                             DoorOperationActivity, LockOperationActivity)
+from august.activity import (
+    ACTIVITY_ACTION_STATES,
+    DoorbellMotionActivity,
+    DoorOperationActivity,
+    LockOperationActivity,
+)
 
 
 def update_lock_detail_from_activity(lock_detail, activity):
@@ -27,16 +31,15 @@ def update_lock_detail_from_activity(lock_detail, activity):
 
 def update_doorbell_image_from_activity(doorbell_detail, activity):
     """Update the DoorDetail from an activity with a new image."""
-    if activity.image_created_at_datetime is None:
-        return False
     if activity.device_id != doorbell_detail.device_id:
         raise ValueError
     if isinstance(activity, DoorbellMotionActivity):
-        if (
-            doorbell_detail.image_created_at_datetime is None
-            or doorbell_detail.image_created_at_datetime
-            < activity.image_created_at_datetime
-        ):
+        if activity.image_created_at_datetime is None:
+            return False
+
+        if (doorbell_detail.image_created_at_datetime is None
+                or doorbell_detail.image_created_at_datetime
+                < activity.image_created_at_datetime):
             doorbell_detail.image_url = activity.image_url
             doorbell_detail.image_created_at_datetime = (
                 activity.image_created_at_datetime
