@@ -58,7 +58,9 @@ class DoorbellDetail(DeviceDetail):
         self._image_created_at_datetime = None
 
         if "created_at" in recent_image:
-            self._image_created_at_datetime = dateutil.parser.parse(recent_image["created_at"])
+            self._image_created_at_datetime = dateutil.parser.parse(
+                recent_image["created_at"]
+            )
 
         self._battery_level = None
         if "telemetry" in data:

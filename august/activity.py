@@ -13,10 +13,17 @@ ACTION_DOORBELL_MOTION_DETECTED = "doorbell_motion_detected"
 ACTION_DOORBELL_CALL_MISSED = "doorbell_call_missed"
 ACTION_DOORBELL_CALL_HANGUP = "doorbell_call_hangup"
 
-ACTIVITY_ACTIONS_DOORBELL_DING = [ACTION_DOORBELL_CALL_MISSED, ACTION_DOORBELL_CALL_HANGUP]
+ACTIVITY_ACTIONS_DOORBELL_DING = [
+    ACTION_DOORBELL_CALL_MISSED,
+    ACTION_DOORBELL_CALL_HANGUP,
+]
 ACTIVITY_ACTIONS_DOORBELL_MOTION = [ACTION_DOORBELL_MOTION_DETECTED]
 ACTIVITY_ACTIONS_DOORBELL_VIEW = [ACTION_DOORBELL_CALL_INITIATED]
-ACTIVITY_ACTIONS_LOCK_OPERATION = [ACTION_LOCK_LOCK, ACTION_LOCK_UNLOCK, ACTION_LOCK_ONETOUCHLOCK]
+ACTIVITY_ACTIONS_LOCK_OPERATION = [
+    ACTION_LOCK_LOCK,
+    ACTION_LOCK_UNLOCK,
+    ACTION_LOCK_ONETOUCHLOCK,
+]
 ACTIVITY_ACTIONS_DOOR_OPERATION = [ACTION_DOOR_CLOSED, ACTION_DOOR_OPEN]
 
 ACTIVITY_ACTION_STATES = {
@@ -99,7 +106,7 @@ class DoorbellMotionActivity(Activity):
         self._image_url = None if image is None else image.get("secure_url")
         self._image_created_at_datetime = None
         if "created_at" in image:
-             self._image_created_at_datetime = dateutil.parser.parse(image["created_at"])
+            self._image_created_at_datetime = dateutil.parser.parse(image["created_at"])
 
     @property
     def image_url(self):
@@ -108,6 +115,7 @@ class DoorbellMotionActivity(Activity):
     @property
     def image_created_at_datetime(self):
         return self._image_created_at_datetime
+
 
 class DoorbellDingActivity(Activity):
     def __init__(self, data):
@@ -130,6 +138,7 @@ class DoorbellDingActivity(Activity):
     def activity_end_time(self):
         return self._activity_end_time
 
+
 class DoorbellViewActivity(Activity):
     def __init__(self, data):
         super().__init__(ActivityType.DOORBELL_VIEW, data)
@@ -151,14 +160,14 @@ class DoorbellViewActivity(Activity):
     def activity_end_time(self):
         return self._activity_end_time
 
+
 class LockOperationActivity(Activity):
     def __init__(self, data):
         super().__init__(ActivityType.LOCK_OPERATION, data)
 
         calling_user = data.get("callingUser", {})
         self._operated_by = "{} {}".format(
-            calling_user.get("FirstName"),
-            calling_user.get("LastName"),
+            calling_user.get("FirstName"), calling_user.get("LastName"),
         )
 
     @property
