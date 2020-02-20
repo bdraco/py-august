@@ -138,6 +138,14 @@ class TestDetail(unittest.TestCase):
         self.assertEqual(
             "https://image.com/vmk16naaaa7ibuey7sar.jpg", doorbell.image_url
         )
+        doorbell_motion_activity_no_image = DoorbellMotionActivity(
+            json.loads(load_fixture("doorbell_motion_activity_no_image.json"))
+        )
+        self.assertFalse(
+            update_doorbell_image_from_activity(
+                doorbell, doorbell_motion_activity_no_image
+            )
+        )
         doorbell_motion_activity = DoorbellMotionActivity(
             json.loads(load_fixture("doorbell_motion_activity.json"))
         )
@@ -169,3 +177,32 @@ class TestDetail(unittest.TestCase):
             update_doorbell_image_from_activity(
                 doorbell, wrong_doorbell_motion_activity
             )
+
+    def test_update_doorbell_image_from_activity_missing_image_at_start(self):
+        doorbell = DoorbellDetail(
+            json.loads(load_fixture("get_doorbell_missing_image.json"))
+        )
+        self.assertEqual("K98GiDT45GUL", doorbell.device_id)
+        self.assertEqual(
+            None, doorbell.image_created_at_datetime,
+        )
+        self.assertEqual(None, doorbell.image_url)
+        doorbell_motion_activity_no_image = DoorbellMotionActivity(
+            json.loads(load_fixture("doorbell_motion_activity_no_image.json"))
+        )
+        self.assertFalse(
+            update_doorbell_image_from_activity(
+                doorbell, doorbell_motion_activity_no_image
+            )
+        )
+        doorbell_motion_activity = DoorbellMotionActivity(
+            json.loads(load_fixture("doorbell_motion_activity.json"))
+        )
+        self.assertTrue(
+            update_doorbell_image_from_activity(doorbell, doorbell_motion_activity)
+        )
+        self.assertEqual(
+            dateutil.parser.parse("2020-02-20T17:44:45Z"),
+            doorbell.image_created_at_datetime,
+        )
+        self.assertEqual("https://my.updated.image/image.jpg", doorbell.image_url)

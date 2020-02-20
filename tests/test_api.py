@@ -100,6 +100,36 @@ class TestApi(unittest.TestCase):
         )
 
     @requests_mock.Mocker()
+    def test_get_doorbell_detail_missing_image(self, mock):
+        mock.register_uri(
+            "get",
+            API_GET_DOORBELL_URL.format(doorbell_id="K98GiDT45GUL"),
+            text=load_fixture("get_doorbell_missing_image.json"),
+        )
+
+        api = Api()
+        doorbell = api.get_doorbell_detail(ACCESS_TOKEN, "K98GiDT45GUL")
+
+        self.assertEqual("K98GiDT45GUL", doorbell.device_id)
+        self.assertEqual("Front Door", doorbell.device_name)
+        self.assertEqual("3dd2accaea08", doorbell.house_id)
+        self.assertEqual("tBXZR0Z35E", doorbell.serial_number)
+        self.assertEqual("2.3.0-RC153+201711151527", doorbell.firmware_version)
+        self.assertEqual("doorbell_call_status_online", doorbell.status)
+        self.assertEqual(96, doorbell.battery_level)
+        self.assertEqual(True, doorbell.is_online)
+        self.assertEqual(False, doorbell.is_standby)
+        self.assertEqual(
+            None, doorbell.image_created_at_datetime
+        )
+        self.assertEqual(True, doorbell.has_subscription)
+        self.assertEqual(
+            None, doorbell.image_url
+        )
+
+
+
+    @requests_mock.Mocker()
     def test_get_locks(self, mock):
         mock.register_uri("get", API_GET_LOCKS_URL, text=load_fixture("get_locks.json"))
 

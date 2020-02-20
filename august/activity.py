@@ -106,7 +106,7 @@ class DoorbellMotionActivity(Activity):
         image = data.get("info", {}).get("image")
         self._image_url = None if image is None else image.get("secure_url")
         self._image_created_at_datetime = None
-        if "created_at" in image:
+        if image is not None and "created_at" in image:
             self._image_created_at_datetime = dateutil.parser.parse(image["created_at"])
 
     @property
