@@ -1,5 +1,8 @@
-from august.device import Device, DeviceDetail
+import datetime
+
 import dateutil.parser
+
+from august.device import Device, DeviceDetail
 
 
 class Doorbell(Device):
