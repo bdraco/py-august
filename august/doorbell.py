@@ -19,6 +19,10 @@ class Doorbell(Device):
         return self._status
 
     @property
+    def is_standby(self):
+        return self.status == "standby"
+
+    @property
     def is_online(self):
         return self.status == "doorbell_call_status_online"
 
@@ -62,6 +66,10 @@ class DoorbellDetail(DeviceDetail):
     @property
     def is_online(self):
         return self.status == "doorbell_call_status_online"
+
+    @property
+    def is_standby(self):
+        return self.status == "standby"
 
     @property
     def image_url(self):

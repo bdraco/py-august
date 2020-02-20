@@ -4,7 +4,7 @@ from datetime import datetime
 
 import requests_mock
 import dateutil.parser
-from dateutil.tz import tzutc
+from dateutil.tz import tzutc, tzlocal
 from requests.exceptions import HTTPError
 from requests.models import Response
 from requests.structures import CaseInsensitiveDict
@@ -420,8 +420,10 @@ class TestApi(unittest.TestCase):
 
         api = Api()
         activities = api.lock_return_activities(ACCESS_TOKEN, lock_id)
-        expected_lock_dt = dateutil.parser.parse("2020-02-19T19:44:54.371Z").replace(
-            tzinfo=None
+        expected_lock_dt = (
+            dateutil.parser.parse("2020-02-19T19:44:54.371Z")
+            .astimezone(tz=tzlocal())
+            .replace(tzinfo=None)
         )
 
         self.assertEqual(len(activities), 2)
@@ -449,8 +451,10 @@ class TestApi(unittest.TestCase):
 
         api = Api()
         activities = api.unlock_return_activities(ACCESS_TOKEN, lock_id)
-        expected_unlock_dt = dateutil.parser.parse("2020-02-19T19:44:26.745Z").replace(
-            tzinfo=None
+        expected_unlock_dt = (
+            dateutil.parser.parse("2020-02-19T19:44:26.745Z")
+            .astimezone(tz=tzlocal())
+            .replace(tzinfo=None)
         )
 
         self.assertEqual(len(activities), 2)
@@ -478,8 +482,10 @@ class TestApi(unittest.TestCase):
 
         api = Api()
         activities = api.lock_return_activities(ACCESS_TOKEN, lock_id)
-        expected_lock_dt = dateutil.parser.parse("2020-02-19T19:44:54.371Z").replace(
-            tzinfo=None
+        expected_lock_dt = (
+            dateutil.parser.parse("2020-02-19T19:44:54.371Z")
+            .astimezone(tz=tzlocal())
+            .replace(tzinfo=None)
         )
 
         self.assertEqual(len(activities), 1)
@@ -501,8 +507,10 @@ class TestApi(unittest.TestCase):
 
         api = Api()
         activities = api.unlock_return_activities(ACCESS_TOKEN, lock_id)
-        expected_unlock_dt = dateutil.parser.parse("2020-02-19T19:44:26.745Z").replace(
-            tzinfo=None
+        expected_unlock_dt = (
+            dateutil.parser.parse("2020-02-19T19:44:26.745Z")
+            .astimezone(tz=tzlocal())
+            .replace(tzinfo=None)
         )
 
         self.assertEqual(len(activities), 1)
