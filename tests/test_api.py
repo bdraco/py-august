@@ -73,10 +73,14 @@ class TestApi(unittest.TestCase):
 
     @requests_mock.Mocker()
     def test_get_doorbell_detail(self, mock):
+        expected_doorbell_image_url = "https://image.com/vmk16naaaa7ibuey7sar.jpg"
         mock.register_uri(
             "get",
             API_GET_DOORBELL_URL.format(doorbell_id="K98GiDT45GUL"),
             text=load_fixture("get_doorbell.json"),
+        )
+        mock.register_uri(
+            "get", expected_doorbell_image_url, text="doorbell_image_mocked"
         )
 
         api = Api()
@@ -89,6 +93,7 @@ class TestApi(unittest.TestCase):
         self.assertEqual("2.3.0-RC153+201711151527", doorbell.firmware_version)
         self.assertEqual("doorbell_call_status_online", doorbell.status)
         self.assertEqual(96, doorbell.battery_level)
+        self.assertEqual("gen1", doorbell.model)
         self.assertEqual(True, doorbell.is_online)
         self.assertEqual(False, doorbell.is_standby)
         self.assertEqual(
@@ -96,8 +101,10 @@ class TestApi(unittest.TestCase):
             doorbell.image_created_at_datetime,
         )
         self.assertEqual(True, doorbell.has_subscription)
+        self.assertEqual(expected_doorbell_image_url, doorbell.image_url)
+        self.assertEqual(doorbell.get_doorbell_image(), b"doorbell_image_mocked")
         self.assertEqual(
-            "https://image.com/vmk16naaaa7ibuey7sar.jpg", doorbell.image_url
+            doorbell.get_doorbell_image(timeout=50), b"doorbell_image_mocked"
         )
 
     @requests_mock.Mocker()
@@ -177,10 +184,12 @@ class TestApi(unittest.TestCase):
         self.assertEqual("XY", lock.serial_number)
         self.assertEqual("undefined-4.3.0-1.8.14", lock.firmware_version)
         self.assertEqual(92, lock.battery_level)
+        self.assertEqual("AUG-MD01", lock.model)
         self.assertEqual(None, lock.keypad)
         self.assertIsInstance(lock.bridge, BridgeDetail)
         self.assertIsInstance(lock.bridge.status, BridgeStatusDetail)
         self.assertEqual(BridgeStatus.ONLINE, lock.bridge.status.current)
+        self.assertEqual(True, lock.bridge_is_online)
         self.assertEqual(True, lock.bridge.operative)
         self.assertEqual(True, lock.doorsense)
 
@@ -210,9 +219,11 @@ class TestApi(unittest.TestCase):
         self.assertEqual("X2FSW05DGA", lock.serial_number)
         self.assertEqual("109717e9-3.0.44-3.0.30", lock.firmware_version)
         self.assertEqual(88, lock.battery_level)
+        self.assertEqual("AUG-SL02-M02-S02", lock.model)
         self.assertEqual("Medium", lock.keypad.battery_level)
         self.assertEqual("5bc65c24e6ef2a263e1450a8", lock.keypad.device_id)
         self.assertIsInstance(lock.bridge, BridgeDetail)
+        self.assertEqual(True, lock.bridge_is_online)
         self.assertEqual(True, lock.bridge.operative)
         self.assertEqual(True, lock.doorsense)
 
@@ -242,6 +253,8 @@ class TestApi(unittest.TestCase):
         self.assertEqual("ABC", lock.serial_number)
         self.assertEqual("undefined-1.59.0-1.13.2", lock.firmware_version)
         self.assertEqual(-100, lock.battery_level)
+        self.assertEqual("AUG-X", lock.model)
+        self.assertEqual(False, lock.bridge_is_online)
         self.assertEqual(None, lock.keypad)
         self.assertEqual(None, lock.bridge)
         self.assertEqual(False, lock.doorsense)
@@ -270,7 +283,10 @@ class TestApi(unittest.TestCase):
         self.assertEqual(88, lock.battery_level)
         self.assertEqual("Medium", lock.keypad.battery_level)
         self.assertEqual("5bc65c24e6ef2a263e1450a8", lock.keypad.device_id)
+        self.assertEqual("AK-R1", lock.keypad.model)
+        self.assertEqual("Front Door Lock Keypad", lock.keypad.device_name)
         self.assertIsInstance(lock.bridge, BridgeDetail)
+        self.assertEqual(True, lock.bridge_is_online)
         self.assertEqual(True, lock.bridge.operative)
         self.assertEqual(False, lock.doorsense)
 

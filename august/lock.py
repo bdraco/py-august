@@ -3,7 +3,7 @@ from enum import Enum
 import datetime
 import dateutil.parser
 
-from august.bridge import BridgeDetail
+from august.bridge import BridgeDetail, BridgeStatus
 from august.device import Device, DeviceDetail
 from august.keypad import KeypadDetail
 
@@ -50,6 +50,7 @@ class LockDetail(DeviceDetail):
         self._door_state = LockDoorStatus.UNKNOWN
         self._lock_status_datetime = None
         self._door_state_datetime = None
+        self._model = None
 
         if "LockStatus" in data:
             lock_status = data["LockStatus"]
@@ -67,11 +68,19 @@ class LockDetail(DeviceDetail):
                 self._doorsense = True
 
         if "keypad" in data:
-            self._keypad_detail = KeypadDetail(self.house_id, data["keypad"])
+            keypad_name = data["LockName"] + " Keypad"
+            self._keypad_detail = KeypadDetail(self.house_id, keypad_name, data["keypad"])
         else:
             self._keypad_detail = None
 
         self._battery_level = int(100 * data["battery"])
+
+        if "skuNumber" in data:
+            self._model = data["skuNumber"]
+
+    @property
+    def model(self):
+        return self._model
 
     @property
     def battery_level(self):
@@ -84,6 +93,22 @@ class LockDetail(DeviceDetail):
     @property
     def bridge(self):
         return self._bridge
+
+    @property
+    def bridge_is_online(self):
+        if self._bridge is None:
+            return False
+
+        # Old style bridge that does not report current status
+        # This may have been updated but I do not have a Gen2
+        # doorbell to test with yet.
+        if self._bridge.status is None and self._bridge.operative:
+            return True
+
+        if (self._bridge.status is not None and self._bridge.status.current == BridgeStatus.ONLINE):
+            return True
+
+        return False
 
     @property
     def doorsense(self):

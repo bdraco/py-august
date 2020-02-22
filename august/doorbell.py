@@ -1,6 +1,7 @@
 import datetime
 
 import dateutil.parser
+import requests
 
 from august.device import Device, DeviceDetail
 
@@ -59,6 +60,10 @@ class DoorbellDetail(DeviceDetail):
         self._image_url = recent_image.get("secure_url", None)
         self._has_subscription = data.get("dvrSubscriptionSetupDone", False)
         self._image_created_at_datetime = None
+        self._model = None
+
+        if "type" in data:
+            self._model = data["type"]
 
         if "created_at" in recent_image:
             self._image_created_at_datetime = dateutil.parser.parse(
@@ -72,6 +77,10 @@ class DoorbellDetail(DeviceDetail):
     @property
     def status(self):
         return self._status
+
+    @property
+    def model(self):
+        return self._model
 
     @property
     def is_online(self):
@@ -108,3 +117,6 @@ class DoorbellDetail(DeviceDetail):
     @property
     def has_subscription(self):
         return self._has_subscription
+
+    def get_doorbell_image(self, timeout=10):
+        return requests.get(self._image_url, timeout=timeout).content
