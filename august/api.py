@@ -4,22 +4,8 @@ import time
 
 import dateutil.parser
 from requests import Session, request
-from requests.exceptions import HTTPError
 
-from august.activity import (
-    ACTIVITY_ACTIONS_DOOR_OPERATION,
-    ACTIVITY_ACTIONS_DOORBELL_DING,
-    ACTIVITY_ACTIONS_DOORBELL_MOTION,
-    ACTIVITY_ACTIONS_DOORBELL_VIEW,
-    ACTIVITY_ACTIONS_LOCK_OPERATION,
-    DoorbellDingActivity,
-    DoorbellMotionActivity,
-    DoorbellViewActivity,
-    DoorOperationActivity,
-    LockOperationActivity,
-)
 from august.doorbell import Doorbell, DoorbellDetail
-from august.exceptions import AugustApiHTTPError
 from august.lock import (
     Lock,
     LockDetail,
@@ -39,132 +25,55 @@ from .api.common import (
     _process_activity_json,
     _process_doorbells_json,
     _process_locks_json,
+    API_RETRY_TIME
+    API_RETRY_ATTEMPTS
 )
 
-from .api.common import (
-    HEADER_ACCEPT_VERSION,
-    HEADER_AUGUST_ACCESS_TOKEN,
-    HEADER_AUGUST_API_KEY,
-    HEADER_KEASE_API_KEY,
-    HEADER_CONTENT_TYPE,
-    HEADER_USER_AGENT,
-    HEADER_VALUE_API_KEY,
-    HEADER_VALUE_CONTENT_TYPE,
-    HEADER_VALUE_USER_AGENT,
-    HEADER_VALUE_ACCEPT_VERSION,
-    API_RETRY_ATTEMPTS,
-    API_RETRY_TIME,
-    API_BASE_URL,
-    API_GET_SESSION_URL,
-    API_SEND_VERIFICATION_CODE_URLS,
-    API_VALIDATE_VERIFICATION_CODE_URLS,
-    API_GET_HOUSE_ACTIVITIES_URL,
-    API_GET_DOORBELLS_URL,
-    API_GET_DOORBELL_URL,
-    API_WAKEUP_DOORBELL_URL,
-    API_GET_HOUSES_URL,
-    API_GET_HOUSE_URL,
-    API_GET_LOCKS_URL,
-    API_GET_LOCK_URL,
-    API_GET_LOCK_STATUS_URL,
-    API_GET_PINS_URL,
-    API_LOCK_URL,
-    API_UNLOCK_URL,
-)
-
-
-class Api:
+class Api(ApiCommon):
     def __init__(self, timeout=10, command_timeout=60, http_session: Session = None):
         self._timeout = timeout
         self._command_timeout = command_timeout
         self._http_session = http_session
 
     def get_session(self, install_id, identifier, password):
-        response = self._call_api(
-            "post",
-            API_GET_SESSION_URL,
-            json={
-                "installId": install_id,
-                "identifier": identifier,
-                "password": password,
-            },
-        )
-
-        return response
+        return self._dict_to_api(self._build_get_session_request(install_id, identifier, password))
 
     def send_verification_code(self, access_token, login_method, username):
-        response = self._call_api(
-            "post",
-            API_SEND_VERIFICATION_CODE_URLS[login_method],
-            access_token=access_token,
-            json={"value": username},
-        )
+        return self._dict_to_api(self._build_send_verification_code_request(access_token, login_method, username))
 
-        return response
-
-    def validate_verification_code(
+    def _build_validate_verification_code_request(
         self, access_token, login_method, username, verification_code
     ):
-        response = self._call_api(
-            "post",
-            API_VALIDATE_VERIFICATION_CODE_URLS[login_method],
-            access_token=access_token,
-            json={login_method: username, "code": str(verification_code)},
-        )
-
-        return response
+       return self._dict_to_api(self._build_send_verification_code_request(access_token, login_method, username, verification_code))
 
     def get_doorbells(self, access_token):
         return _process_doorbells_json(
-            self._call_api(
-                "get", API_GET_DOORBELLS_URL, access_token=access_token
-            ).json()
+            self._dict_to_api(self._build_get_doorbells_request(access_token)).json()
         )
 
     def get_doorbell_detail(self, access_token, doorbell_id):
         return DoorbellDetail(
-            self._call_api(
-                "get",
-                API_GET_DOORBELL_URL.format(doorbell_id=doorbell_id),
-                access_token=access_token,
-            ).json()
+            self._dict_to_api(self._build_get_doorbell_detail_request(access_token,doorbell_id)).json()
         )
 
     def wakeup_doorbell(self, access_token, doorbell_id):
-        self._call_api(
-            "put",
-            API_WAKEUP_DOORBELL_URL.format(doorbell_id=doorbell_id),
-            access_token=access_token,
-        )
-
+        self._dict_to_api(self._build_wakeup_doorbell_request(access_token,doorbell_id))
         return True
 
     def get_houses(self, access_token):
-        return self._call_api(
-            "get", API_GET_HOUSES_URL, access_token=access_token
-        ).json()
+        return self._dict_to_api(self._build_get_houses_request(access_token))
 
     def get_house(self, access_token, house_id):
-        return self._call_api(
-            "get",
-            API_GET_HOUSE_URL.format(house_id=house_id),
-            access_token=access_token,
-        ).json()
+        return self._dict_to_api(self._build_get_house_request(access_token,house_id)).json()
+
 
     def get_house_activities(self, access_token, house_id, limit=8):
-        return _process_activity_json(
-            self._call_api(
-                "get",
-                API_GET_HOUSE_ACTIVITIES_URL.format(house_id=house_id),
-                access_token=access_token,
-                params={"limit": limit},
-            ).json()
-        )
+        return self._dict_to_api(self._build_get_house_activities_request(access_token, house_id, limit=limit))json()
 
     def get_locks(self, access_token):
-        return _process_locks_json(
-            self._call_api("get", API_GET_LOCKS_URL, access_token=access_token).json()
-        )
+        return _build_get_locks_request(
+            self._dict_to_api(self._build_get_doorbells_request(access_token)).json()
+        )        
 
     def get_operable_locks(self, access_token):
         locks = self.get_locks(access_token)
@@ -173,19 +82,11 @@ class Api:
 
     def get_lock_detail(self, access_token, lock_id):
         return LockDetail(
-            self._call_api(
-                "get",
-                API_GET_LOCK_URL.format(lock_id=lock_id),
-                access_token=access_token,
-            ).json()
-        )
+            self._dict_to_api(self._build_get_lock_detail_request(access_token, lock_id)).json()
+        )        
 
     def get_lock_status(self, access_token, lock_id, door_status=False):
-        json_dict = self._call_api(
-            "get",
-            API_GET_LOCK_STATUS_URL.format(lock_id=lock_id),
-            access_token=access_token,
-        ).json()
+        json_dict = self._dict_to_api(self._build_get_lock_status_request(access_token,lock_id)).json()
 
         if door_status:
             return (
@@ -196,11 +97,7 @@ class Api:
         return determine_lock_status(json_dict.get("status"))
 
     def get_lock_door_status(self, access_token, lock_id, lock_status=False):
-        json_dict = self._call_api(
-            "get",
-            API_GET_LOCK_STATUS_URL.format(lock_id=lock_id),
-            access_token=access_token,
-        ).json()
+        json_dict = self._dict_to_api(self._build_get_lock_status_request(access_token, lock_id)).json()
 
         if lock_status:
             return (
@@ -211,19 +108,12 @@ class Api:
         return determine_door_state(json_dict.get("doorState"))
 
     def get_pins(self, access_token, lock_id):
-        json_dict = self._call_api(
-            "get", API_GET_PINS_URL.format(lock_id=lock_id), access_token=access_token
-        ).json()
+        json_dict = self._dict_to_api(self._build_get_pins(access_token, lock_id)).json()
 
         return [Pin(pin_json) for pin_json in json_dict.get("loaded", [])]
 
     def _call_lock_operation(self, url_str, access_token, lock_id):
-        return self._call_api(
-            "put",
-            url_str.format(lock_id=lock_id),
-            access_token=access_token,
-            timeout=self._command_timeout,
-        ).json()
+        return self._dict_to_api(self._build_call_lock_operation(url_str,access_token,house_id)).json()
 
     def _lock(self, access_token, lock_id):
         return self._call_lock_operation(API_LOCK_URL, access_token, lock_id)
@@ -233,8 +123,7 @@ class Api:
 
         Returns a LockStatus state.
         """
-        json_dict = self._lock(access_token, lock_id)
-        return determine_lock_status(json_dict.get("status"))
+        return determine_lock_status(self._lock(access_token, lock_id).get("status"))
 
     def lock_return_activities(self, access_token, lock_id):
         """Execute a remote lock operation.
@@ -254,8 +143,7 @@ class Api:
 
         Returns a LockStatus state.
         """
-        json_dict = self._unlock(access_token, lock_id)
-        return determine_lock_status(json_dict.get("status"))
+        return determine_lock_status(self._unlock(access_token, lock_id).get("status"))
 
     def unlock_return_activities(self, access_token, lock_id):
         """Execute a remote lock operation.
@@ -271,6 +159,20 @@ class Api:
         response = self._call_api("get", API_GET_HOUSES_URL, access_token=access_token)
 
         return response.headers[HEADER_AUGUST_ACCESS_TOKEN]
+
+    def _dict_to_api(api_dict):
+        kwargs = []
+        if json in 'api_dict':
+            kwargs['json'] = api_dict['json']
+        if params in 'api_dict':
+            kwargs['params'] = api_dict['params']
+        
+        return self._call_api(
+            api_dict['method'],
+            api_dict['url'],
+            access_token=(api_dict['access_token'] if 'access_token' in api_dict else None),
+            **kwargs
+        )
 
     def _call_api(self, method, url, access_token=None, **kwargs):
         payload = kwargs.get("params") or kwargs.get("json")
