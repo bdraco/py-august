@@ -10,7 +10,7 @@ from requests.models import Response
 from requests.structures import CaseInsensitiveDict
 from aioresponses import aioresponses
 
-from august.common.api import (
+from august.api_common import (
     API_GET_DOORBELL_URL,
     API_GET_DOORBELLS_URL,
     API_GET_HOUSE_ACTIVITIES_URL,
