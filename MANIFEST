@@ -6,10 +6,10 @@ august/activity.py
 august/async/api.py
 august/async/authenticator.py
 august/api.py
-august/api/common.py
 august/authenticator.py
-august/authenticator/common.py
 august/bridge.py
+august/common/api.py
+august/common/authenticator.py
 august/device.py
 august/doorbell.py
 august/exceptions.py
