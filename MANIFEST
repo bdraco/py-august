@@ -3,8 +3,12 @@ setup.cfg
 setup.py
 august/__init__.py
 august/activity.py
+august/async/api.py
+august/async/authenticator.py
 august/api.py
+august/api/common.py
 august/authenticator.py
+august/authenticator/common.py
 august/bridge.py
 august/device.py
 august/doorbell.py
