@@ -95,9 +95,7 @@ class Api(ApiCommon):
 
     def get_locks(self, access_token):
         return _process_locks_json(
-            self._dict_to_api(
-                self._build_get_locks_request(access_token)
-            ).json()
+            self._dict_to_api(self._build_get_locks_request(access_token)).json()
         )
 
     def get_operable_locks(self, access_token):
@@ -147,7 +145,9 @@ class Api(ApiCommon):
 
     def _call_lock_operation(self, url_str, access_token, lock_id):
         return self._dict_to_api(
-            self._build_call_lock_operation_request(url_str, access_token, lock_id, self._command_timeout)
+            self._build_call_lock_operation_request(
+                url_str, access_token, lock_id, self._command_timeout
+            )
         ).json()
 
     def _lock(self, access_token, lock_id):
@@ -197,33 +197,26 @@ class Api(ApiCommon):
         ).headers[HEADER_AUGUST_ACCESS_TOKEN]
 
     def _dict_to_api(self, api_dict):
-        kwargs = {}
-        for arg in ["json", "params", "timeout"]:
-            if arg in "api_dict":
-                kwargs[arg] = api_dict[arg]
+        url = api_dict["url"]
+        method = api_dict["method"]
+        access_token = api_dict.get("access_token", None)
+        del api_dict["url"]
+        del api_dict["method"]
+        if access_token:
+            del api_dict["access_token"]
 
-        return self._call_api(
-            api_dict["method"],
-            api_dict["url"],
-            access_token=(
-                api_dict["access_token"] if "access_token" in api_dict else None
-            ),
-            **kwargs
-        )
+        payload = api_dict.get("params") or api_dict.get("json")
 
-    def _call_api(self, method, url, access_token=None, **kwargs):
-        payload = kwargs.get("params") or kwargs.get("json")
+        if "headers" not in api_dict:
+            api_dict["headers"] = _api_headers(access_token=access_token)
 
-        if "headers" not in kwargs:
-            kwargs["headers"] = _api_headers(access_token=access_token)
-
-        if "timeout" not in kwargs:
-            kwargs["timeout"] = self._timeout
+        if "timeout" not in api_dict:
+            api_dict["timeout"] = self._timeout
 
         _LOGGER.debug(
             "About to call %s with header=%s and payload=%s",
             url,
-            kwargs["headers"],
+            api_dict["headers"],
             payload,
         )
 
@@ -231,9 +224,9 @@ class Api(ApiCommon):
         while attempts < API_RETRY_ATTEMPTS:
             attempts += 1
             response = (
-                self._http_session.request(method, url, **kwargs)
+                self._http_session.request(method, url, **api_dict)
                 if self._http_session is not None
-                else request(method, url, **kwargs)
+                else request(method, url, **api_dict)
             )
             _LOGGER.debug(
                 "Received API response: %s, %s", response.status_code, response.content

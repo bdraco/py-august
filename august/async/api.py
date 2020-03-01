@@ -37,7 +37,7 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class AsyncApi(ApiCommon):
-    def __init__(self, timeout=10, command_timeout=60, aiohttp_session: ClientSession()):
+    def __init__(self, timeout=10, command_timeout=60, aiohttp_session=ClientSession()):
         self._timeout = timeout
         self._command_timeout = command_timeout
         self._aiohttp_session = aiohttp_session
@@ -64,12 +64,14 @@ class AsyncApi(ApiCommon):
         )
 
     async def async_get_doorbells(self, access_token):
-        response = await self._async_dict_to_api(self._build_get_doorbells_request(access_token))
+        response = await self._async_dict_to_api(
+            self._build_get_doorbells_request(access_token)
+        )
         return _process_doorbells_json(await response.json())
 
     async def async_get_doorbell_detail(self, access_token, doorbell_id):
         response = await self._async_dict_to_api(
-                self._build_get_doorbell_detail_request(access_token, doorbell_id)
+            self._build_get_doorbell_detail_request(access_token, doorbell_id)
         )
         return DoorbellDetail(await response.json())
 
@@ -80,7 +82,9 @@ class AsyncApi(ApiCommon):
         return True
 
     async def async_get_houses(self, access_token):
-        return await self._async_dict_to_api(self._build_get_houses_request(access_token))
+        return await self._async_dict_to_api(
+            self._build_get_houses_request(access_token)
+        )
 
     async def async_get_house(self, access_token, house_id):
         response = await self._async_dict_to_api(
@@ -89,16 +93,16 @@ class AsyncApi(ApiCommon):
         return await response.json()
 
     async def async_get_house_activities(self, access_token, house_id, limit=8):
-        response =    await self._async_dict_to_api(
-                self._build_get_house_activities_request(
-                    access_token, house_id, limit=limit
-                )
+        response = await self._async_dict_to_api(
+            self._build_get_house_activities_request(
+                access_token, house_id, limit=limit
+            )
         )
         return _process_activity_json(await response.json())
 
     async def async_get_locks(self, access_token):
         response = await self._async_dict_to_api(
-                self._build_get_locks_request(access_token)
+            self._build_get_locks_request(access_token)
         )
         return _process_locks_json(await response.json())
 
@@ -127,7 +131,9 @@ class AsyncApi(ApiCommon):
 
         return determine_lock_status(json_dict.get("status"))
 
-    async def async_get_lock_door_status(self, access_token, lock_id, lock_status=False):
+    async def async_get_lock_door_status(
+        self, access_token, lock_id, lock_status=False
+    ):
         json_dict = await self._async_dict_to_api(
             self._build_get_lock_status_request(access_token, lock_id)
         ).json()
@@ -149,18 +155,24 @@ class AsyncApi(ApiCommon):
 
     async def _async_call_lock_operation(self, url_str, access_token, lock_id):
         return await self._async_dict_to_api(
-            self._build_call_lock_operation_request(url_str, access_token, lock_id, self._command_timeout)
+            self._build_call_lock_operation_request(
+                url_str, access_token, lock_id, self._command_timeout
+            )
         ).json()
 
     async def _async_lock(self, access_token, lock_id):
-        return await self._async_call_lock_operation(API_LOCK_URL, access_token, lock_id)
+        return await self._async_call_lock_operation(
+            API_LOCK_URL, access_token, lock_id
+        )
 
     async def async_lock(self, access_token, lock_id):
         """Execute a remote lock operation.
 
         Returns a LockStatus state.
         """
-        return determine_lock_status( (await self._async_lock(access_token, lock_id)).get("status") )
+        return determine_lock_status(
+            (await self._async_lock(access_token, lock_id)).get("status")
+        )
 
     async def async_lock_return_activities(self, access_token, lock_id):
         """Execute a remote lock operation.
@@ -170,17 +182,23 @@ class AsyncApi(ApiCommon):
         If the lock supports door sense one of the activities
         will include the current door state.
         """
-        return _convert_lock_result_to_activities(await self._lock(access_token, lock_id))
+        return _convert_lock_result_to_activities(
+            await self._lock(access_token, lock_id)
+        )
 
     async def _async_unlock(self, access_token, lock_id):
-        return await self._async_call_lock_operation(API_UNLOCK_URL, access_token, lock_id)
+        return await self._async_call_lock_operation(
+            API_UNLOCK_URL, access_token, lock_id
+        )
 
     async def async_unlock(self, access_token, lock_id):
         """Execute a remote unlock operation.
 
         Returns a LockStatus state.
         """
-        return determine_lock_status( (await self._async_unlock(access_token, lock_id)).get("status"))
+        return determine_lock_status(
+            (await self._async_unlock(access_token, lock_id)).get("status")
+        )
 
     async def async_unlock_return_activities(self, access_token, lock_id):
         """Execute a remote lock operation.
@@ -190,7 +208,9 @@ class AsyncApi(ApiCommon):
         If the lock supports door sense one of the activities
         will include the current door state.
         """
-        return _convert_lock_result_to_activities(await self._async_unlock(access_token, lock_id))
+        return _convert_lock_result_to_activities(
+            await self._async_unlock(access_token, lock_id)
+        )
 
     async def async_refresh_access_token(self, access_token):
         """Obtain a new api token."""
@@ -198,34 +218,34 @@ class AsyncApi(ApiCommon):
             self._build_refresh_access_token_request(access_token)
         ).headers[HEADER_AUGUST_ACCESS_TOKEN]
 
-    async def _async_dict_to_api(self, **kwargs):
-        url = kwargs["url"]
-        method = kwargs["method"]
-        access_token = kwargs.get(access_token,None)
-        del kwargs["url"]
-        del kwargs["method"]
+    async def _async_dict_to_api(self, api_dict):
+        url = api_dict["url"]
+        method = api_dict["method"]
+        access_token = api_dict.get("access_token", None)
+        del api_dict["url"]
+        del api_dict["method"]
         if access_token:
-            del kwargs["access_token"]
-        
-        payload = kwargs.get("params") or api_dict.get("json")
+            del api_dict["access_token"]
 
-        if "headers" not in kwargs:
-            kwargs["headers"] = _api_headers(access_token=access_token)
+        payload = api_dict.get("params") or api_dict.get("json")
 
-        if "timeout" not in kwargs:
-            kwargs["timeout"] = self._timeout
+        if "headers" not in api_dict:
+            api_dict["headers"] = _api_headers(access_token=access_token)
+
+        if "timeout" not in api_dict:
+            api_dict["timeout"] = self._timeout
 
         _LOGGER.debug(
             "About to call %s with header=%s and payload=%s",
             url,
-            kwargs["headers"],
+            api_dict["headers"],
             payload,
         )
 
         attempts = 0
         while attempts < API_RETRY_ATTEMPTS:
             attempts += 1
-            response = await self._aiohttp_session.request(method, url, **kwargs)
+            response = await self._aiohttp_session.request(method, url, **api_dict)
             _LOGGER.debug(
                 "Received API response: %s, %s", response.status_code, response.content
             )
