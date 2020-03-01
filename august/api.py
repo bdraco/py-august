@@ -98,8 +98,8 @@ class Api(ApiCommon):
             self._dict_to_api(
                 self._build_get_locks_request(
                     self._build_get_locks_request(access_token)
-                ).json()
-            )
+                )
+            ).json()
         )
 
     def get_operable_locks(self, access_token):
