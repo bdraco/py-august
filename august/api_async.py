@@ -36,7 +36,7 @@ from august.common.api import (
 _LOGGER = logging.getLogger(__name__)
 
 
-class AsyncApi(ApiCommon):
+class ApiAsync(ApiCommon):
     def __init__(self, timeout=10, command_timeout=60, aiohttp_session=ClientSession()):
         self._timeout = timeout
         self._command_timeout = command_timeout
