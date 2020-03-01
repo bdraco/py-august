@@ -147,7 +147,7 @@ class Api(ApiCommon):
 
         return [Pin(pin_json) for pin_json in json_dict.get("loaded", [])]
 
-    def _call_lock_operation_request(self, url_str, access_token, lock_id):
+    def _call_lock_operation(self, url_str, access_token, lock_id):
         return self._dict_to_api(
             self._build_call_lock_operation_request(url_str, access_token, lock_id, self._command_timeout)
         ).json()
