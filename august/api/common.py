@@ -181,9 +181,6 @@ def _process_locks_json(json_dict):
 
 
 class ApiCommon:
-    def __init__(self):
-        pass
-
     def _build_get_session_request(self, install_id, identifier, password):
         return {
             method: "post",
