@@ -115,20 +115,20 @@ class Api:
         return response
 
     def get_doorbells(self, access_token):
-        json_dict = self._call_api(
-            "get", API_GET_DOORBELLS_URL, access_token=access_token
-        ).json()
-
-        return _process_doorbells_json(json_dict)
-
-    def get_doorbell_detail(self, access_token, doorbell_id):
-        response = self._call_api(
-            "get",
-            API_GET_DOORBELL_URL.format(doorbell_id=doorbell_id),
-            access_token=access_token,
+        return _process_doorbells_json(
+            self._call_api(
+                "get", API_GET_DOORBELLS_URL, access_token=access_token
+            ).json()
         )
 
-        return DoorbellDetail(response.json())
+    def get_doorbell_detail(self, access_token, doorbell_id):
+        return DoorbellDetail(
+            self._call_api(
+                "get",
+                API_GET_DOORBELL_URL.format(doorbell_id=doorbell_id),
+                access_token=access_token,
+            ).json()
+        )
 
     def wakeup_doorbell(self, access_token, doorbell_id):
         self._call_api(
@@ -140,35 +140,31 @@ class Api:
         return True
 
     def get_houses(self, access_token):
-        response = self._call_api("get", API_GET_HOUSES_URL, access_token=access_token)
-
-        return response.json()
+        return self._call_api(
+            "get", API_GET_HOUSES_URL, access_token=access_token
+        ).json()
 
     def get_house(self, access_token, house_id):
-        response = self._call_api(
+        return self._call_api(
             "get",
             API_GET_HOUSE_URL.format(house_id=house_id),
             access_token=access_token,
-        )
-
-        return response.json()
-
-    def get_house_activities(self, access_token, house_id, limit=8):
-        response = self._call_api(
-            "get",
-            API_GET_HOUSE_ACTIVITIES_URL.format(house_id=house_id),
-            access_token=access_token,
-            params={"limit": limit},
-        )
-
-        return _process_activity_json(activity_json)
-
-    def get_locks(self, access_token):
-        json_dict = self._call_api(
-            "get", API_GET_LOCKS_URL, access_token=access_token
         ).json()
 
-        return _process_locks_json(activity_json)
+    def get_house_activities(self, access_token, house_id, limit=8):
+        return _process_activity_json(
+            self._call_api(
+                "get",
+                API_GET_HOUSE_ACTIVITIES_URL.format(house_id=house_id),
+                access_token=access_token,
+                params={"limit": limit},
+            ).json()
+        )
+
+    def get_locks(self, access_token):
+        return _process_locks_json(self._call_api(
+            "get", API_GET_LOCKS_URL, access_token=access_token
+        ).json())
 
     def get_operable_locks(self, access_token):
         locks = self.get_locks(access_token)
@@ -176,11 +172,13 @@ class Api:
         return [lock for lock in locks if lock.is_operable]
 
     def get_lock_detail(self, access_token, lock_id):
-        response = self._call_api(
-            "get", API_GET_LOCK_URL.format(lock_id=lock_id), access_token=access_token
+        return LockDetail(
+            self._call_api(
+                "get",
+                API_GET_LOCK_URL.format(lock_id=lock_id),
+                access_token=access_token,
+            ).json()
         )
-
-        return LockDetail(response.json())
 
     def get_lock_status(self, access_token, lock_id, door_status=False):
         json_dict = self._call_api(
@@ -246,8 +244,7 @@ class Api:
         If the lock supports door sense one of the activities
         will include the current door state.
         """
-        json_dict = self._lock(access_token, lock_id)
-        return _convert_lock_result_to_activities(json_dict)
+        return _convert_lock_result_to_activities(self._lock(access_token, lock_id))
 
     def _unlock(self, access_token, lock_id):
         return self._call_lock_operation(API_UNLOCK_URL, access_token, lock_id)
@@ -268,8 +265,7 @@ class Api:
         If the lock supports door sense one of the activities
         will include the current door state.
         """
-        json_dict = self._unlock(access_token, lock_id)
-        return _convert_lock_result_to_activities(json_dict)
+        return _convert_lock_result_to_activities(self._unlock(access_token, lock_id))
 
     def refresh_access_token(self, access_token):
         response = self._call_api("get", API_GET_HOUSES_URL, access_token=access_token)
