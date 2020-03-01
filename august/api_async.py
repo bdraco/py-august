@@ -108,16 +108,16 @@ class ApiAsync(ApiCommon):
         return [lock for lock in locks if lock.is_operable]
 
     async def async_get_lock_detail(self, access_token, lock_id):
-        return LockDetail(
-            await self._async_dict_to_api(
-                self._build_get_lock_detail_request(access_token, lock_id)
-            ).json()
+        response = await self._async_dict_to_api(
+            self._build_get_lock_detail_request(access_token, lock_id)
         )
+        return LockDetail(await response.json())
 
     async def async_get_lock_status(self, access_token, lock_id, door_status=False):
-        json_dict = await self._async_dict_to_api(
+        response = await self._async_dict_to_api(
             self._build_get_lock_status_request(access_token, lock_id)
-        ).json()
+        )
+        json_dict = await response.json()
 
         if door_status:
             return (
@@ -130,9 +130,10 @@ class ApiAsync(ApiCommon):
     async def async_get_lock_door_status(
         self, access_token, lock_id, lock_status=False
     ):
-        json_dict = await self._async_dict_to_api(
+        response = await self._async_dict_to_api(
             self._build_get_lock_status_request(access_token, lock_id)
-        ).json()
+        )
+        json_dict = await response.json()
 
         if lock_status:
             return (
@@ -143,18 +144,20 @@ class ApiAsync(ApiCommon):
         return determine_door_state(json_dict.get("doorState"))
 
     async def async_get_pins(self, access_token, lock_id):
-        json_dict = await self._async_dict_to_api(
+        response = await self._async_dict_to_api(
             self._build_get_pins_request(access_token, lock_id)
-        ).json()
+        )
+        json_dict = await response.json()
 
         return [Pin(pin_json) for pin_json in json_dict.get("loaded", [])]
 
     async def _async_call_lock_operation(self, url_str, access_token, lock_id):
-        return await self._async_dict_to_api(
+        response = await self._async_dict_to_api(
             self._build_call_lock_operation_request(
                 url_str, access_token, lock_id, self._command_timeout
             )
-        ).json()
+        )
+        return await response.json()
 
     async def _async_lock(self, access_token, lock_id):
         return await self._async_call_lock_operation(

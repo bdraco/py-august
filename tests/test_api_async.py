@@ -1,7 +1,7 @@
 import os
-import unittest
 from datetime import datetime
 
+import aiounittest
 import requests_mock
 import dateutil.parser
 from dateutil.tz import tzutc, tzlocal
@@ -23,9 +23,7 @@ from august.api_common import (
     _raise_response_exceptions,
 )
 
-from august.api_async import (
-    AsyncApi
-)
+from august.api_async import ApiAsync
 from august.bridge import BridgeDetail, BridgeStatus, BridgeStatusDetail
 from august.exceptions import AugustApiHTTPError
 from august.lock import LockDoorStatus, LockStatus
@@ -44,15 +42,15 @@ def utc_of(year, month, day, hour, minute, second, microsecond):
     return datetime(year, month, day, hour, minute, second, microsecond, tzinfo=tzutc())
 
 
-class TestAsyncApi(unittest.TestCase):
+class TestApiAsync(aiounittest.AsyncTestCase):
     @aioresponses()
     async def test_async_get_doorbells(self, mock):
-        mock.register_uri(
-            "get", API_GET_DOORBELLS_URL, text=load_fixture("get_doorbells.json")
-        )
+        mock.get(API_GET_DOORBELLS_URL, body=load_fixture("get_doorbells.json"))
 
-        api = AsyncApi()
-        doorbells = sorted(api.get_doorbells(ACCESS_TOKEN), key=lambda d: d.device_id)
+        api = ApiAsync()
+        doorbells = sorted(
+            await api.async_get_doorbells(ACCESS_TOKEN), key=lambda d: d.device_id
+        )
 
         self.assertEqual(2, len(doorbells))
 
@@ -77,17 +75,14 @@ class TestAsyncApi(unittest.TestCase):
     @aioresponses()
     async def test_async_get_doorbell_detail(self, mock):
         expected_doorbell_image_url = "https://image.com/vmk16naaaa7ibuey7sar.jpg"
-        mock.register_uri(
-            "get",
+        mock.get(
             API_GET_DOORBELL_URL.format(doorbell_id="K98GiDT45GUL"),
-            text=load_fixture("get_doorbell.json"),
+            body=load_fixture("get_doorbell.json"),
         )
-        mock.register_uri(
-            "get", expected_doorbell_image_url, text="doorbell_image_mocked"
-        )
+        mock.get(expected_doorbell_image_url, body="doorbell_image_mocked")
 
-        api = AsyncApi()
-        doorbell = api.get_doorbell_detail(ACCESS_TOKEN, "K98GiDT45GUL")
+        api = ApiAsync()
+        doorbell = await api.async_get_doorbell_detail(ACCESS_TOKEN, "K98GiDT45GUL")
 
         self.assertEqual("K98GiDT45GUL", doorbell.device_id)
         self.assertEqual("Front Door", doorbell.device_name)
@@ -112,14 +107,13 @@ class TestAsyncApi(unittest.TestCase):
 
     @aioresponses()
     async def test_async_get_doorbell_detail_missing_image(self, mock):
-        mock.register_uri(
-            "get",
+        mock.get(
             API_GET_DOORBELL_URL.format(doorbell_id="K98GiDT45GUL"),
-            text=load_fixture("get_doorbell_missing_image.json"),
+            body=load_fixture("get_doorbell_missing_image.json"),
         )
 
-        api = AsyncApi()
-        doorbell = api.get_doorbell_detail(ACCESS_TOKEN, "K98GiDT45GUL")
+        api = ApiAsync()
+        doorbell = await api.async_get_doorbell_detail(ACCESS_TOKEN, "K98GiDT45GUL")
 
         self.assertEqual("K98GiDT45GUL", doorbell.device_id)
         self.assertEqual("Front Door", doorbell.device_name)
@@ -136,14 +130,13 @@ class TestAsyncApi(unittest.TestCase):
 
     @requests_mock.Mocker()
     async def test_async_get_doorbell_offline(self, mock):
-        mock.register_uri(
-            "get",
+        mock.get(
             API_GET_DOORBELL_URL.format(doorbell_id="231ee2168dd0"),
-            text=load_fixture("get_doorbell.offline.json"),
+            body=load_fixture("get_doorbell.offline.json"),
         )
 
-        api = AsyncApi()
-        doorbell = api.get_doorbell_detail(ACCESS_TOKEN, "231ee2168dd0")
+        api = ApiAsync()
+        doorbell = await api.async_get_doorbell_detail(ACCESS_TOKEN, "231ee2168dd0")
 
         self.assertEqual("231ee2168dd0", doorbell.device_id)
         self.assertEqual("My Door", doorbell.device_name)
@@ -164,49 +157,46 @@ class TestAsyncApi(unittest.TestCase):
 
     @aioresponses()
     async def test_async_get_doorbell_gen2_full_battery_detail(self, mock):
-        mock.register_uri(
-            "get",
+        mock.get(
             API_GET_DOORBELL_URL.format(doorbell_id="did"),
-            text=load_fixture("get_doorbell.battery_full.json"),
+            body=load_fixture("get_doorbell.battery_full.json"),
         )
 
-        api = AsyncApi()
-        doorbell = api.get_doorbell_detail(ACCESS_TOKEN, "did")
+        api = ApiAsync()
+        doorbell = await api.async_get_doorbell_detail(ACCESS_TOKEN, "did")
 
         self.assertEqual(100, doorbell.battery_level)
 
     @aioresponses()
     async def test_async_get_doorbell_gen2_medium_battery_detail(self, mock):
-        mock.register_uri(
-            "get",
+        mock.get(
             API_GET_DOORBELL_URL.format(doorbell_id="did"),
-            text=load_fixture("get_doorbell.battery_medium.json"),
+            body=load_fixture("get_doorbell.battery_medium.json"),
         )
 
-        api = AsyncApi()
-        doorbell = api.get_doorbell_detail(ACCESS_TOKEN, "did")
+        api = ApiAsync()
+        doorbell = await api.async_get_doorbell_detail(ACCESS_TOKEN, "did")
 
         self.assertEqual(75, doorbell.battery_level)
 
     @aioresponses()
     async def test_async_get_doorbell_gen2_low_battery_detail(self, mock):
-        mock.register_uri(
-            "get",
+        mock.get(
             API_GET_DOORBELL_URL.format(doorbell_id="did"),
-            text=load_fixture("get_doorbell.battery_low.json"),
+            body=load_fixture("get_doorbell.battery_low.json"),
         )
 
-        api = AsyncApi()
-        doorbell = api.get_doorbell_detail(ACCESS_TOKEN, "did")
+        api = ApiAsync()
+        doorbell = await api.async_get_doorbell_detail(ACCESS_TOKEN, "did")
 
         self.assertEqual(10, doorbell.battery_level)
 
     @aioresponses()
     async def test_async_get_locks(self, mock):
-        mock.register_uri("get", API_GET_LOCKS_URL, text=load_fixture("get_locks.json"))
+        mock.get(API_GET_LOCKS_URL, body=load_fixture("get_locks.json"))
 
-        api = AsyncApi()
-        locks = sorted(api.get_locks(ACCESS_TOKEN), key=lambda d: d.device_id)
+        api = ApiAsync()
+        locks = sorted(api.async_get_locks(ACCESS_TOKEN), key=lambda d: d.device_id)
 
         self.assertEqual(2, len(locks))
 
@@ -224,10 +214,10 @@ class TestAsyncApi(unittest.TestCase):
 
     @aioresponses()
     async def test_async_get_operable_locks(self, mock):
-        mock.register_uri("get", API_GET_LOCKS_URL, text=load_fixture("get_locks.json"))
+        mock.get(API_GET_LOCKS_URL, body=load_fixture("get_locks.json"))
 
-        api = AsyncApi()
-        locks = api.get_operable_locks(ACCESS_TOKEN)
+        api = ApiAsync()
+        locks = await api.async_get_operable_locks(ACCESS_TOKEN)
 
         self.assertEqual(1, len(locks))
 
@@ -239,14 +229,13 @@ class TestAsyncApi(unittest.TestCase):
 
     @aioresponses()
     async def test_async_get_lock_detail_with_doorsense_bridge_online(self, mock):
-        mock.register_uri(
-            "get",
+        mock.get(
             API_GET_LOCK_URL.format(lock_id="ABC"),
-            text=load_fixture("get_lock.online_with_doorsense.json"),
+            body=load_fixture("get_lock.online_with_doorsense.json"),
         )
 
-        api = AsyncApi()
-        lock = api.get_lock_detail(ACCESS_TOKEN, "ABC")
+        api = ApiAsync()
+        lock = await api.async_get_lock_detail(ACCESS_TOKEN, "ABC")
 
         self.assertEqual("ABC", lock.device_id)
         self.assertEqual("Online door with doorsense", lock.device_name)
@@ -274,14 +263,15 @@ class TestAsyncApi(unittest.TestCase):
 
     @aioresponses()
     async def test_async_get_lock_detail_bridge_online(self, mock):
-        mock.register_uri(
-            "get",
+        mock.get(
             API_GET_LOCK_URL.format(lock_id="A6697750D607098BAE8D6BAA11EF8063"),
-            text=load_fixture("get_lock.online.json"),
+            body=load_fixture("get_lock.online.json"),
         )
 
-        api = AsyncApi()
-        lock = api.get_lock_detail(ACCESS_TOKEN, "A6697750D607098BAE8D6BAA11EF8063")
+        api = ApiAsync()
+        lock = await api.async_get_lock_detail(
+            ACCESS_TOKEN, "A6697750D607098BAE8D6BAA11EF8063"
+        )
 
         self.assertEqual("A6697750D607098BAE8D6BAA11EF8063", lock.device_id)
         self.assertEqual("Front Door Lock", lock.device_name)
@@ -309,14 +299,13 @@ class TestAsyncApi(unittest.TestCase):
 
     @aioresponses()
     async def test_async_get_lock_detail_bridge_offline(self, mock):
-        mock.register_uri(
-            "get",
+        mock.get(
             API_GET_LOCK_URL.format(lock_id="ABC"),
-            text=load_fixture("get_lock.offline.json"),
+            body=load_fixture("get_lock.offline.json"),
         )
 
-        api = AsyncApi()
-        lock = api.get_lock_detail(ACCESS_TOKEN, "ABC")
+        api = ApiAsync()
+        lock = await api.async_get_lock_detail(ACCESS_TOKEN, "ABC")
 
         self.assertEqual("ABC", lock.device_id)
         self.assertEqual("Test", lock.device_name)
@@ -337,14 +326,15 @@ class TestAsyncApi(unittest.TestCase):
 
     @aioresponses()
     async def test_async_get_lock_detail_doorsense_init_state(self, mock):
-        mock.register_uri(
-            "get",
+        mock.get(
             API_GET_LOCK_URL.format(lock_id="A6697750D607098BAE8D6BAA11EF8063"),
-            text=load_fixture("get_lock.doorsense_init.json"),
+            body=load_fixture("get_lock.doorsense_init.json"),
         )
 
-        api = AsyncApi()
-        lock = api.get_lock_detail(ACCESS_TOKEN, "A6697750D607098BAE8D6BAA11EF8063")
+        api = ApiAsync()
+        lock = await api.async_get_lock_detail(
+            ACCESS_TOKEN, "A6697750D607098BAE8D6BAA11EF8063"
+        )
 
         self.assertEqual("A6697750D607098BAE8D6BAA11EF8063", lock.device_id)
         self.assertEqual("Front Door Lock", lock.device_name)
@@ -388,29 +378,29 @@ class TestAsyncApi(unittest.TestCase):
     @aioresponses()
     async def test_async_get_lock_status_with_locked_response(self, mock):
         lock_id = 1234
-        mock.register_uri(
-            "get",
+        mock.get(
             API_GET_LOCK_STATUS_URL.format(lock_id=lock_id),
-            text='{"status": "kAugLockState_Locked"}',
+            body='{"status": "kAugLockState_Locked"}',
         )
 
-        api = AsyncApi()
-        status = api.get_lock_status(ACCESS_TOKEN, lock_id)
+        api = ApiAsync()
+        status = await api.async_get_lock_status(ACCESS_TOKEN, lock_id)
 
         self.assertEqual(LockStatus.LOCKED, status)
 
     @aioresponses()
     async def test_async_get_lock_and_door_status_with_locked_response(self, mock):
         lock_id = 1234
-        mock.register_uri(
-            "get",
+        mock.get(
             API_GET_LOCK_STATUS_URL.format(lock_id=lock_id),
-            text='{"status": "kAugLockState_Locked"'
+            body='{"status": "kAugLockState_Locked"'
             ',"doorState": "kAugLockDoorState_Closed"}',
         )
 
-        api = AsyncApi()
-        status, door_status = api.get_lock_status(ACCESS_TOKEN, lock_id, True)
+        api = ApiAsync()
+        status, door_status = await api.async_get_lock_status(
+            ACCESS_TOKEN, lock_id, True
+        )
 
         self.assertEqual(LockStatus.LOCKED, status)
         self.assertEqual(LockDoorStatus.CLOSED, door_status)
@@ -418,71 +408,68 @@ class TestAsyncApi(unittest.TestCase):
     @aioresponses()
     async def test_async_get_lock_status_with_unlocked_response(self, mock):
         lock_id = 1234
-        mock.register_uri(
-            "get",
+        mock.get(
             API_GET_LOCK_STATUS_URL.format(lock_id=lock_id),
-            text='{"status": "kAugLockState_Unlocked"}',
+            body='{"status": "kAugLockState_Unlocked"}',
         )
 
-        api = AsyncApi()
-        status = api.get_lock_status(ACCESS_TOKEN, lock_id)
+        api = ApiAsync()
+        status = await api.async_get_lock_status(ACCESS_TOKEN, lock_id)
 
         self.assertEqual(LockStatus.UNLOCKED, status)
 
     @aioresponses()
     async def test_async_get_lock_status_with_unknown_status_response(self, mock):
         lock_id = 1234
-        mock.register_uri(
-            "get",
+        mock.get(
             API_GET_LOCK_STATUS_URL.format(lock_id=lock_id),
-            text='{"status": "not_advertising"}',
+            body='{"status": "not_advertising"}',
         )
 
-        api = AsyncApi()
-        status = api.get_lock_status(ACCESS_TOKEN, lock_id)
+        api = ApiAsync()
+        status = await api.async_get_lock_status(ACCESS_TOKEN, lock_id)
 
         self.assertEqual(LockStatus.UNKNOWN, status)
 
     @aioresponses()
     async def test_async_get_lock_door_status_with_closed_response(self, mock):
         lock_id = 1234
-        mock.register_uri(
-            "get",
+        mock.get(
             API_GET_LOCK_STATUS_URL.format(lock_id=lock_id),
-            text='{"doorState": "kAugLockDoorState_Closed"}',
+            body='{"doorState": "kAugLockDoorState_Closed"}',
         )
 
-        api = AsyncApi()
-        door_status = api.get_lock_door_status(ACCESS_TOKEN, lock_id)
+        api = ApiAsync()
+        door_status = await api.async_get_lock_door_status(ACCESS_TOKEN, lock_id)
 
         self.assertEqual(LockDoorStatus.CLOSED, door_status)
 
     @aioresponses()
     async def test_async_get_lock_door_status_with_open_response(self, mock):
         lock_id = 1234
-        mock.register_uri(
-            "get",
+        mock.get(
             API_GET_LOCK_STATUS_URL.format(lock_id=lock_id),
-            text='{"doorState": "kAugLockDoorState_Open"}',
+            body='{"doorState": "kAugLockDoorState_Open"}',
         )
 
-        api = AsyncApi()
-        door_status = api.get_lock_door_status(ACCESS_TOKEN, lock_id)
+        api = ApiAsync()
+        door_status = await api.async_get_lock_door_status(ACCESS_TOKEN, lock_id)
 
         self.assertEqual(LockDoorStatus.OPEN, door_status)
 
     @aioresponses()
     async def test_async_get_lock_and_door_status_with_open_response(self, mock):
         lock_id = 1234
-        mock.register_uri(
-            "get",
+        mock.get(
             API_GET_LOCK_STATUS_URL.format(lock_id=lock_id),
-            text='{"status": "kAugLockState_Unlocked"'
+            body='{"status": "kAugLockState_Unlocked"'
             ',"doorState": "kAugLockDoorState_Open"}',
         )
 
-        api = AsyncApi()
-        door_status, status = api.get_lock_door_status(ACCESS_TOKEN, lock_id, True)
+        api = ApiAsync()
+        door_status, status = await api.async_get_lock_door_status(
+            ACCESS_TOKEN, lock_id, True
+        )
 
         self.assertEqual(LockDoorStatus.OPEN, door_status)
         self.assertEqual(LockStatus.UNLOCKED, status)
@@ -490,52 +477,45 @@ class TestAsyncApi(unittest.TestCase):
     @aioresponses()
     async def test_async_get_lock_door_status_with_unknown_response(self, mock):
         lock_id = 1234
-        mock.register_uri(
-            "get",
+        mock.get(
             API_GET_LOCK_STATUS_URL.format(lock_id=lock_id),
-            text='{"doorState": "not_advertising"}',
+            body='{"doorState": "not_advertising"}',
         )
 
-        api = AsyncApi()
-        door_status = api.get_lock_door_status(ACCESS_TOKEN, lock_id)
+        api = ApiAsync()
+        door_status = await api.async_get_lock_door_status(ACCESS_TOKEN, lock_id)
 
         self.assertEqual(LockDoorStatus.UNKNOWN, door_status)
 
     @aioresponses()
     async def test_async_lock_from_fixture(self, mock):
         lock_id = 1234
-        mock.register_uri(
-            "put", API_LOCK_URL.format(lock_id=lock_id), text=load_fixture("lock.json")
-        )
+        mock.put(API_LOCK_URL.format(lock_id=lock_id), body=load_fixture("lock.json"))
 
-        api = AsyncApi()
-        status = api.lock(ACCESS_TOKEN, lock_id)
+        api = ApiAsync()
+        status = await api.async_lock(ACCESS_TOKEN, lock_id)
 
         self.assertEqual(LockStatus.LOCKED, status)
 
     @aioresponses()
     async def test_async_unlock_from_fixture(self, mock):
         lock_id = 1234
-        mock.register_uri(
-            "put",
-            API_UNLOCK_URL.format(lock_id=lock_id),
-            text=load_fixture("unlock.json"),
+        mock.put(
+            API_UNLOCK_URL.format(lock_id=lock_id), body=load_fixture("unlock.json"),
         )
 
-        api = AsyncApi()
-        status = api.unlock(ACCESS_TOKEN, lock_id)
+        api = ApiAsync()
+        status = await api.async_unlock(ACCESS_TOKEN, lock_id)
 
         self.assertEqual(LockStatus.UNLOCKED, status)
 
     @aioresponses()
     async def test_async_lock_return_activities_from_fixture(self, mock):
         lock_id = 1234
-        mock.register_uri(
-            "put", API_LOCK_URL.format(lock_id=lock_id), text=load_fixture("lock.json")
-        )
+        mock.put(API_LOCK_URL.format(lock_id=lock_id), body=load_fixture("lock.json"))
 
-        api = AsyncApi()
-        activities = api.lock_return_activities(ACCESS_TOKEN, lock_id)
+        api = ApiAsync()
+        activities = await api.async_lock_return_activities(ACCESS_TOKEN, lock_id)
         expected_lock_dt = (
             dateutil.parser.parse("2020-02-19T19:44:54.371Z")
             .astimezone(tz=tzlocal())
@@ -559,14 +539,12 @@ class TestAsyncApi(unittest.TestCase):
     @aioresponses()
     async def test_async_unlock_return_activities_from_fixture(self, mock):
         lock_id = 1234
-        mock.register_uri(
-            "put",
-            API_UNLOCK_URL.format(lock_id=lock_id),
-            text=load_fixture("unlock.json"),
+        mock.put(
+            API_UNLOCK_URL.format(lock_id=lock_id), body=load_fixture("unlock.json"),
         )
 
-        api = AsyncApi()
-        activities = api.unlock_return_activities(ACCESS_TOKEN, lock_id)
+        api = ApiAsync()
+        activities = await api.async_unlock_return_activities(ACCESS_TOKEN, lock_id)
         expected_unlock_dt = (
             dateutil.parser.parse("2020-02-19T19:44:26.745Z")
             .astimezone(tz=tzlocal())
@@ -588,16 +566,17 @@ class TestAsyncApi(unittest.TestCase):
         self.assertEqual(activities[1].activity_end_time, expected_unlock_dt)
 
     @aioresponses()
-    async def test_async_lock_return_activities_from_fixture_with_no_doorstate(self, mock):
+    async def test_async_lock_return_activities_from_fixture_with_no_doorstate(
+        self, mock
+    ):
         lock_id = 1234
-        mock.register_uri(
-            "put",
+        mock.put(
             API_LOCK_URL.format(lock_id=lock_id),
-            text=load_fixture("lock_without_doorstate.json"),
+            body=load_fixture("lock_without_doorstate.json"),
         )
 
-        api = AsyncApi()
-        activities = api.lock_return_activities(ACCESS_TOKEN, lock_id)
+        api = ApiAsync()
+        activities = await api.async_lock_return_activities(ACCESS_TOKEN, lock_id)
         expected_lock_dt = (
             dateutil.parser.parse("2020-02-19T19:44:54.371Z")
             .astimezone(tz=tzlocal())
@@ -613,16 +592,17 @@ class TestAsyncApi(unittest.TestCase):
         self.assertEqual(activities[0].activity_end_time, expected_lock_dt)
 
     @aioresponses()
-    async def test_async_unlock_return_activities_from_fixture_with_no_doorstate(self, mock):
+    async def test_async_unlock_return_activities_from_fixture_with_no_doorstate(
+        self, mock
+    ):
         lock_id = 1234
-        mock.register_uri(
-            "put",
+        mock.put(
             API_UNLOCK_URL.format(lock_id=lock_id),
-            text=load_fixture("unlock_without_doorstate.json"),
+            body=load_fixture("unlock_without_doorstate.json"),
         )
 
-        api = AsyncApi()
-        activities = api.unlock_return_activities(ACCESS_TOKEN, lock_id)
+        api = ApiAsync()
+        activities = await api.async_unlock_return_activities(ACCESS_TOKEN, lock_id)
         expected_unlock_dt = (
             dateutil.parser.parse("2020-02-19T19:44:26.745Z")
             .astimezone(tz=tzlocal())
@@ -640,43 +620,39 @@ class TestAsyncApi(unittest.TestCase):
     @aioresponses()
     async def test_async_lock(self, mock):
         lock_id = 1234
-        mock.register_uri(
-            "put",
+        mock.put(
             API_LOCK_URL.format(lock_id=lock_id),
-            text='{"status":"locked",'
+            body='{"status":"locked",'
             '"dateTime":"2017-12-10T07:43:39.056Z",'
             '"isLockStatusChanged":false,'
             '"valid":true}',
         )
 
-        api = AsyncApi()
-        status = api.lock(ACCESS_TOKEN, lock_id)
+        api = ApiAsync()
+        status = await api.async_lock(ACCESS_TOKEN, lock_id)
 
         self.assertEqual(LockStatus.LOCKED, status)
 
     @aioresponses()
     async def test_async_unlock(self, mock):
         lock_id = 1234
-        mock.register_uri(
-            "put", API_UNLOCK_URL.format(lock_id=lock_id), text='{"status": "unlocked"}'
-        )
+        mock.put(API_UNLOCK_URL.format(lock_id=lock_id), body='{"status": "unlocked"}')
 
-        api = AsyncApi()
-        status = api.unlock(ACCESS_TOKEN, lock_id)
+        api = ApiAsync()
+        status = await api.async_unlock(ACCESS_TOKEN, lock_id)
 
         self.assertEqual(LockStatus.UNLOCKED, status)
 
     @aioresponses()
     async def test_async_get_pins(self, mock):
         lock_id = 1234
-        mock.register_uri(
-            "get",
+        mock.get(
             API_GET_PINS_URL.format(lock_id=lock_id),
-            text=load_fixture("get_pins.json"),
+            body=load_fixture("get_pins.json"),
         )
 
-        api = AsyncApi()
-        pins = api.get_pins(ACCESS_TOKEN, lock_id)
+        api = ApiAsync()
+        pins = await api.async_get_pins(ACCESS_TOKEN, lock_id)
 
         self.assertEqual(1, len(pins))
 
@@ -701,14 +677,13 @@ class TestAsyncApi(unittest.TestCase):
     @aioresponses()
     async def test_async_get_house_activities(self, mock):
         house_id = 1234
-        mock.register_uri(
-            "get",
+        mock.get(
             API_GET_HOUSE_ACTIVITIES_URL.format(house_id=house_id),
-            text=load_fixture("get_house_activities.json"),
+            body=load_fixture("get_house_activities.json"),
         )
 
-        api = AsyncApi()
-        activities = api.get_house_activities(ACCESS_TOKEN, house_id)
+        api = ApiAsync()
+        activities = await api.async_get_house_activities(ACCESS_TOKEN, house_id)
 
         self.assertEqual(10, len(activities))
 
@@ -722,6 +697,7 @@ class TestAsyncApi(unittest.TestCase):
         self.assertIsInstance(activities[7], august.activity.DoorOperationActivity)
         self.assertIsInstance(activities[8], august.activity.LockOperationActivity)
         self.assertIsInstance(activities[9], august.activity.LockOperationActivity)
+
 
 class MockedResponse(Response):
     def __init__(self, *args, **kwargs):

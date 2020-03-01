@@ -6,4 +6,5 @@ pytest
 pytest-cov
 requests_mock
 aioresponses
+aiounittest
 tox
