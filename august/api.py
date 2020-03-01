@@ -1,26 +1,22 @@
+"""Api base calls for sync and async."""
+
 import json
 import logging
 import time
 
-import dateutil.parser
 from requests import Session, request
 
-from august.doorbell import Doorbell, DoorbellDetail
+from august.doorbell import DoorbellDetail
 from august.lock import (
-    Lock,
     LockDetail,
-    LockDoorStatus,
     determine_door_state,
     determine_lock_status,
-    door_state_to_string,
 )
 from august.pin import Pin
 
 from august.api.common import (
     _raise_response_exceptions,
     _convert_lock_result_to_activities,
-    _activity_from_dict,
-    _map_lock_result_to_activity,
     _datetime_string_to_epoch,
     _process_activity_json,
     _process_doorbells_json,
@@ -28,6 +24,8 @@ from august.api.common import (
     API_RETRY_TIME,
     API_RETRY_ATTEMPTS,
 )
+
+_LOGGER = logging.getLogger(__name__)
 
 
 class Api(ApiCommon):
@@ -48,7 +46,7 @@ class Api(ApiCommon):
             )
         )
 
-    def _build_validate_verification_code_request(
+    def validate_verification_code(
         self, access_token, login_method, username, verification_code
     ):
         return self._dict_to_api(
@@ -84,15 +82,21 @@ class Api(ApiCommon):
         ).json()
 
     def get_house_activities(self, access_token, house_id, limit=8):
-        return self._dict_to_api(
-            self._build_get_house_activities_request(
-                access_token, house_id, limit=limit
-            )
-        ).json()
+        return _process_activity_json(
+            self._dict_to_api(
+                self._build_get_house_activities_request(
+                    access_token, house_id, limit=limit
+                )
+            ).json()
+        )
 
     def get_locks(self, access_token):
-        return _build_get_locks_request(
-            self._dict_to_api(self._build_get_doorbells_request(access_token)).json()
+        return _process_locks_json(
+            self._build_get_locks_request(
+                self._dict_to_api(
+                    self._build_get_doorbells_request(access_token)
+                ).json()
+            )
         )
 
     def get_operable_locks(self, access_token):

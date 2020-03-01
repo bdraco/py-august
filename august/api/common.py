@@ -60,8 +60,6 @@ API_GET_PINS_URL = API_BASE_URL + "/locks/{lock_id}/pins"
 API_LOCK_URL = API_BASE_URL + "/remoteoperate/{lock_id}/lock"
 API_UNLOCK_URL = API_BASE_URL + "/remoteoperate/{lock_id}/unlock"
 
-_LOGGER = logging.getLogger(__name__)
-
 
 def _api_headers(access_token=None):
     headers = {
