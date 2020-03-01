@@ -1,14 +1,10 @@
 """Api calls for sync."""
 
-import aiohttp
 import asyncio
 
 from aiohttp import ClientSession
 
 import logging
-import time
-
-from requests import Session, request
 
 from august.doorbell import DoorbellDetail
 from august.lock import (
