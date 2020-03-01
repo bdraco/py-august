@@ -13,7 +13,7 @@ from august.lock import (
 )
 from august.pin import Pin
 
-from august.api.common import (
+from august.common.api import (
     _raise_response_exceptions,
     _convert_lock_result_to_activities,
     _process_activity_json,
