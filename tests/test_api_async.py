@@ -1,15 +1,10 @@
-import os
 from datetime import datetime
+import os
 
-import aiounittest
-import requests_mock
-import dateutil.parser
-from dateutil.tz import tzutc, tzlocal
-from requests.exceptions import HTTPError
-from requests.models import Response
-from requests.structures import CaseInsensitiveDict
 from aioresponses import aioresponses
-
+import aiounittest
+import august.activity
+from august.api_async import ApiAsync
 from august.api_common import (
     API_GET_DOORBELL_URL,
     API_GET_DOORBELLS_URL,
@@ -20,13 +15,11 @@ from august.api_common import (
     API_GET_PINS_URL,
     API_LOCK_URL,
     API_UNLOCK_URL,
-    _raise_response_exceptions,
 )
-
-from august.api_async import ApiAsync
 from august.bridge import BridgeDetail, BridgeStatus, BridgeStatusDetail
-from august.exceptions import AugustApiHTTPError
 from august.lock import LockDoorStatus, LockStatus
+import dateutil.parser
+from dateutil.tz import tzlocal, tzutc
 
 ACCESS_TOKEN = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9"
 
@@ -128,7 +121,7 @@ class TestApiAsync(aiounittest.AsyncTestCase):
         self.assertEqual(True, doorbell.has_subscription)
         self.assertEqual(None, doorbell.image_url)
 
-    @requests_mock.Mocker()
+    @aioresponses()
     async def test_async_get_doorbell_offline(self, mock):
         mock.get(
             API_GET_DOORBELL_URL.format(doorbell_id="231ee2168dd0"),
@@ -196,7 +189,7 @@ class TestApiAsync(aiounittest.AsyncTestCase):
         mock.get(API_GET_LOCKS_URL, body=load_fixture("get_locks.json"))
 
         api = ApiAsync()
-        locks = sorted(api.async_get_locks(ACCESS_TOKEN), key=lambda d: d.device_id)
+        locks = sorted(await api.async_get_locks(ACCESS_TOKEN), key=lambda d: d.device_id)
 
         self.assertEqual(2, len(locks))
 
@@ -699,12 +692,3 @@ class TestApiAsync(aiounittest.AsyncTestCase):
         self.assertIsInstance(activities[9], august.activity.LockOperationActivity)
 
 
-class MockedResponse(Response):
-    def __init__(self, *args, **kwargs):
-        content = kwargs.pop("content", None)
-        super(MockedResponse, self).__init__(*args, **kwargs)
-        self._mocked_content = content
-
-    @property
-    def content(self):
-        return self._mocked_content
