@@ -192,80 +192,90 @@ class ApiCommon:
                     "identifier": identifier,
                     "password": password,
                     }
-               }
+                }
 
     def _build_send_verification_code_request(self, access_token, login_method, username):
         return {
                 method: "post",
                 url: API_SEND_VERIFICATION_CODE_URLS[login_method],
                 access_token: access_token,
-                json:{"value": username}
-        } 
+                json: {"value": username}}
 
     def _build_validate_verification_code_request(
         self, access_token, login_method, username, verification_code
     ):
-        return (
-            "post",
-            API_VALIDATE_VERIFICATION_CODE_URLS[login_method],
-            access_token:access_token,
-            json={login_method: username, "code": str(verification_code)},
-        )
+        return {
+                method: "post",
+                url: API_VALIDATE_VERIFICATION_CODE_URLS[login_method],
+                access_token: access_token,
+                json: {login_method: username, "code": str(verification_code)}}
 
     def _build_get_doorbells_request(self, access_token):
-        return("get", API_GET_DOORBELLS_URL, access_token=access_token)
-
+        return {
+                method: "get",
+                url: API_GET_DOORBELLS_URL,
+                access_token: access_token}
 
     def _build_get_doorbell_detail_request(self, access_token, doorbell_id):
-            return (
-                "get",
-                API_GET_DOORBELL_URL.format(doorbell_id=doorbell_id),
-                access_token=access_token
-            )
+        return {
+                method: "get",
+                url: API_GET_DOORBELL_URL.format(doorbell_id=doorbell_id),
+                access_token: access_token}
 
     def _build_wakeup_doorbell_request(self, access_token, doorbell_id):
-        return (
-            "put",
-            API_WAKEUP_DOORBELL_URL.format(doorbell_id=doorbell_id),
-            access_token=access_token,
-        )
+        return {
+                method: "put",
+                url: API_WAKEUP_DOORBELL_URL.format(doorbell_id=doorbell_id),
+                access_token: access_token}
 
     def _build_get_houses_request(self, access_token):
-        return (
-            "get", API_GET_HOUSES_URL, access_token=access_token
-        )
+        return {
+                method: "get",
+                access_token: access_token}
 
     def _build_get_house_request (self, access_token, house_id):
-        return (
-            "get",
-            API_GET_HOUSE_URL.format(house_id=house_id),
-            access_token=access_token,
-        )
+        return {
+                method: "get",
+                url: API_GET_HOUSE_URL.format(house_id=house_id),
+                access_token: access_token}
 
     def _build_get_house_activities_request(self, access_token, house_id, limit=8):
-            return ("get",
-            API_GET_HOUSE_ACTIVITIES_URL.format(house_id=house_id),
-            access_token=access_token,
-            params={"limit": limit})
+        return {
+                method: "get",
+                url: API_GET_HOUSE_ACTIVITIES_URL.format(house_id=house_id),
+                access_token: access_token,
+                params: {"limit": limit}}
 
     def _build_get_locks_request(self, access_token):
-        return("get", API_GET_LOCKS_URL, access_token=access_token)
+        return {
+                method: "get",
+                url: API_GET_LOCKS_URL,
+                access_token: access_token}
 
     def _build_get_lock_detail_request(self, access_token, lock_id):
-            return("get",
-            API_GET_LOCK_URL.format(lock_id=lock_id),
-            access_token=access_token)
+        return {
+                method: "get",
+                url: API_GET_LOCK_URL.format(lock_id=lock_id),
+                access_token: access_token}
 
     def _build_get_lock_status_request(self, access_token, lock_id)
-            return("get",
-            API_GET_LOCK_STATUS_URL.format(lock_id=lock_id),
-            access_token=access_token)
+        return {
+                method: "get",
+                url: API_GET_LOCK_STATUS_URL.format(lock_id=lock_id),
+                access_token: access_token
+               }
 
     def _build_get_pins(self, access_token, lock_id):
-        return("get", API_GET_PINS_URL.format(lock_id=lock_id), access_token=access_token)
+        return {
+                method: "get",
+                url: API_GET_PINS_URL.format(lock_id=lock_id),
+                access_token: access_token
+               }
 
     def _build_call_lock_operation(self, url_str, access_token, lock_id):
-        return("put",
-        url_str.format(lock_id=lock_id),
-        access_token=access_token,
-        timeout=self._command_timeout)
+        return {
+                method: "put",
+                url: url_str.format(lock_id=lock_id),
+                access_token: access_token,
+                timeout: self._command_timeout
+               }
