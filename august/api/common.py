@@ -62,6 +62,7 @@ API_UNLOCK_URL = API_BASE_URL + "/remoteoperate/{lock_id}/unlock"
 
 _LOGGER = logging.getLogger(__name__)
 
+
 def _api_headers(access_token=None):
     headers = {
         HEADER_ACCEPT_VERSION: HEADER_VALUE_ACCEPT_VERSION,
@@ -75,6 +76,7 @@ def _api_headers(access_token=None):
         headers[HEADER_AUGUST_ACCESS_TOKEN] = access_token
 
     return headers
+
 
 def _raise_response_exceptions(response):
     try:
@@ -159,6 +161,7 @@ def _map_lock_result_to_activity(lock_id, activity_epoch, action_text):
 def _datetime_string_to_epoch(datetime_string):
     return dateutil.parser.parse(datetime_string).timestamp() * 1000
 
+
 def _process_activity_json(activity_json):
     activities = []
     for activity_json in response.json():
@@ -168,10 +171,10 @@ def _process_activity_json(activity_json):
 
     return activities
 
+
 def _process_doorbells_json(json_dict):
-        return [Doorbell(device_id, data) for device_id, data in json_dict.items()]
+    return [Doorbell(device_id, data) for device_id, data in json_dict.items()]
+
 
 def _process_locks_json(json_dict):
-        return [Lock(device_id, data) for device_id, data in json_dict.items()]
-
-
+    return [Lock(device_id, data) for device_id, data in json_dict.items()]

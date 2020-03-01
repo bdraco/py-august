@@ -162,9 +162,9 @@ class Api:
         )
 
     def get_locks(self, access_token):
-        return _process_locks_json(self._call_api(
-            "get", API_GET_LOCKS_URL, access_token=access_token
-        ).json())
+        return _process_locks_json(
+            self._call_api("get", API_GET_LOCKS_URL, access_token=access_token).json()
+        )
 
     def get_operable_locks(self, access_token):
         locks = self.get_locks(access_token)
