@@ -103,7 +103,7 @@ class ApiAsync(ApiCommon):
         return _process_locks_json(await response.json())
 
     async def async_get_operable_locks(self, access_token):
-        locks = self.get_locks(access_token)
+        locks = await self.async_get_locks(access_token)
 
         return [lock for lock in locks if lock.is_operable]
 
