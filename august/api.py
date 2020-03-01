@@ -95,9 +95,9 @@ class Api(ApiCommon):
 
     def get_locks(self, access_token):
         return _process_locks_json(
-            self._build_get_locks_request(
-                self._dict_to_api(
-                    self._build_get_doorbells_request(access_token)
+            self._dict_to_api(
+                self._build_get_locks_request(
+                    self._build_get_locks_request(access_token)
                 ).json()
             )
         )

@@ -10,7 +10,7 @@ from requests.models import Response
 from requests.structures import CaseInsensitiveDict
 
 import august.activity
-from august.api import (
+from august.common.api import (
     API_GET_DOORBELL_URL,
     API_GET_DOORBELLS_URL,
     API_GET_HOUSE_ACTIVITIES_URL,
@@ -20,8 +20,11 @@ from august.api import (
     API_GET_PINS_URL,
     API_LOCK_URL,
     API_UNLOCK_URL,
-    Api,
     _raise_response_exceptions,
+)
+
+from august.api import (
+    Api,
 )
 from august.bridge import BridgeDetail, BridgeStatus, BridgeStatusDetail
 from august.exceptions import AugustApiHTTPError
