@@ -1,6 +1,5 @@
-"""Api base calls for sync and async."""
+"""Api calls for sync."""
 
-import json
 import logging
 import time
 
@@ -17,12 +16,16 @@ from august.pin import Pin
 from august.api.common import (
     _raise_response_exceptions,
     _convert_lock_result_to_activities,
-    _datetime_string_to_epoch,
     _process_activity_json,
     _process_doorbells_json,
     _process_locks_json,
+    _api_headers,
     API_RETRY_TIME,
     API_RETRY_ATTEMPTS,
+    API_LOCK_URL,
+    API_UNLOCK_URL,
+    HEADER_AUGUST_ACCESS_TOKEN,
+    ApiCommon,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -139,14 +142,14 @@ class Api(ApiCommon):
 
     def get_pins(self, access_token, lock_id):
         json_dict = self._dict_to_api(
-            self._build_get_pins(access_token, lock_id)
+            self._build_get_pins_request(access_token, lock_id)
         ).json()
 
         return [Pin(pin_json) for pin_json in json_dict.get("loaded", [])]
 
-    def _call_lock_operation(self, url_str, access_token, lock_id):
+    def _call_lock_operation_request(self, url_str, access_token, lock_id):
         return self._dict_to_api(
-            self._build_call_lock_operation(url_str, access_token, house_id)
+            self._build_call_lock_operation_request(url_str, access_token, lock_id, self._command_timeout)
         ).json()
 
     def _lock(self, access_token, lock_id):
@@ -190,16 +193,16 @@ class Api(ApiCommon):
         return _convert_lock_result_to_activities(self._unlock(access_token, lock_id))
 
     def refresh_access_token(self, access_token):
-        response = self._call_api("get", API_GET_HOUSES_URL, access_token=access_token)
+        """Obtain a new api token."""
+        return self._dict_to_api(
+            self._build_refresh_access_token_request(access_token)
+        ).headers[HEADER_AUGUST_ACCESS_TOKEN]
 
-        return response.headers[HEADER_AUGUST_ACCESS_TOKEN]
-
-    def _dict_to_api(api_dict):
-        kwargs = []
-        if json in "api_dict":
-            kwargs["json"] = api_dict["json"]
-        if params in "api_dict":
-            kwargs["params"] = api_dict["params"]
+    def _dict_to_api(self, api_dict):
+        kwargs = {}
+        for arg in ["json", "params", "timeout"]:
+            if arg in "api_dict":
+                kwargs[arg] = api_dict[arg]
 
         return self._call_api(
             api_dict["method"],

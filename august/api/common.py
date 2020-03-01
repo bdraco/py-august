@@ -1,3 +1,10 @@
+"""Api functions common between sync and async."""
+
+import json
+import dateutil.parser
+
+from requests.exceptions import HTTPError
+
 from august.activity import (
     ACTIVITY_ACTIONS_DOOR_OPERATION,
     ACTIVITY_ACTIONS_DOORBELL_DING,
@@ -10,17 +17,14 @@ from august.activity import (
     DoorOperationActivity,
     LockOperationActivity,
 )
-from august.doorbell import Doorbell, DoorbellDetail
+from august.doorbell import Doorbell
 from august.exceptions import AugustApiHTTPError
 from august.lock import (
     Lock,
-    LockDetail,
     LockDoorStatus,
     determine_door_state,
-    determine_lock_status,
     door_state_to_string,
 )
-from august.pin import Pin
 
 API_RETRY_TIME = 2.5
 API_RETRY_ATTEMPTS = 10
@@ -160,9 +164,9 @@ def _datetime_string_to_epoch(datetime_string):
     return dateutil.parser.parse(datetime_string).timestamp() * 1000
 
 
-def _process_activity_json(activity_json):
+def _process_activity_json(json_dict):
     activities = []
-    for activity_json in response.json():
+    for activity_json in json_dict:
         activity = _activity_from_dict(activity_json)
         if activity:
             activities.append(activity)
@@ -179,6 +183,7 @@ def _process_locks_json(json_dict):
 
 
 class ApiCommon:
+    """Api dict shared between async and sync."""
     def _build_get_session_request(self, install_id, identifier, password):
         return {
             "method": "post",
@@ -266,17 +271,24 @@ class ApiCommon:
             "access_token": access_token,
         }
 
-    def _build_get_pins(self, access_token, lock_id):
+    def _build_get_pins_request(self, access_token, lock_id):
         return {
             "method": "get",
             "url": API_GET_PINS_URL.format(lock_id=lock_id),
             "access_token": access_token,
         }
 
-    def _build_call_lock_operation(self, url_str, access_token, lock_id):
+    def _build_refresh_access_token_request(self, access_token):
+        return {
+            "method": "get",
+            "url": API_GET_HOUSES_URL,
+            "access_token": "access_token",
+        }
+
+    def _build_call_lock_operation_request(self, url_str, access_token, lock_id, timeout):
         return {
             "method": "put",
             "url": url_str.format(lock_id=lock_id),
             "access_token": access_token,
-            "timeout": self._command_timeout,
+            "timeout": timeout,
         }
