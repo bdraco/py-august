@@ -3,7 +3,8 @@
 import asyncio
 import logging
 
-from aiohttp import ClientSession
+
+from aiohttp import ClientSession, ClientResponseError
 from august.api_common import (
     API_LOCK_URL,
     API_RETRY_ATTEMPTS,
@@ -16,7 +17,6 @@ from august.api_common import (
     _process_activity_json,
     _process_doorbells_json,
     _process_locks_json,
-    _raise_response_exceptions,
 )
 from august.doorbell import DoorbellDetail
 from august.lock import LockDetail, determine_door_state, determine_lock_status
@@ -47,7 +47,7 @@ class ApiAsync(ApiCommon):
         self, access_token, login_method, username, verification_code
     ):
         return await self._async_dict_to_api(
-            self._build_send_verification_code_request(
+            self._build_validate_verification_code_request(
                 access_token, login_method, username, verification_code
             )
         )
@@ -253,3 +253,39 @@ class ApiAsync(ApiCommon):
         _raise_response_exceptions(response)
 
         return response
+
+
+
+
+def _raise_response_exceptions(response):
+    try:
+        response.raise_for_status()
+    except ClientResponseError as err:
+        if err.response.status == 422:
+            raise AugustApiHTTPError(
+                "The operation failed because the bridge (connect) is offline.",
+                response=err.response,
+            ) from err
+        if err.response.status == 423:
+            raise AugustApiHTTPError(
+                "The operation failed because the bridge (connect) is in use.",
+                response=err.response,
+            ) from err
+        if err.response.status == 408:
+            raise AugustApiHTTPError(
+                "The operation timed out because the bridge (connect) failed to respond.",
+                response=err.response,
+            ) from err
+        if err.response.headers.get("content-type") == "application/json":
+            # 4XX and 5XX errors return a json error
+            # like b'{"code":97,"message":"Bridge in use"}'
+            # that is user consumable
+            json_dict = json.loads(err.response.content)
+            failure_message = json_dict.get("message")
+            raise AugustApiHTTPError(
+                "The operation failed because: " + failure_message,
+                response=err.response,
+            ) from err
+        raise err
+
+

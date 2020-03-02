@@ -5,6 +5,8 @@ import os
 
 import aiofiles
 
+from aiohttp import ClientError
+
 from august.authenticator_common import (
     ValidationResult,
     AuthenticatorCommon,
@@ -20,9 +22,8 @@ _LOGGER = logging.getLogger(__name__)
 class AuthenticatorAsync(AuthenticatorCommon):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._setup_authentication()
 
-    def async_setup_authentication(self):
+    async def async_setup_authentication(self):
         access_token_cache_file = self._access_token_cache_file
         if access_token_cache_file is not None and os.path.exists(
             access_token_cache_file
@@ -85,6 +86,23 @@ class AuthenticatorAsync(AuthenticatorCommon):
             self._async_cache_authentication(authentication)
 
         return authentication
+
+    async def async_validate_verification_code(self, verification_code):
+        if not verification_code:
+            return ValidationResult.INVALID_VERIFICATION_CODE
+
+        try:
+            await self._api.async_validate_verification_code(
+                self._authentication.access_token,
+                self._login_method,
+                self._username,
+                verification_code,
+            )
+        except ClientError:
+            return ValidationResult.INVALID_VERIFICATION_CODE
+
+        return ValidationResult.VALIDATED
+
 
     async def async_send_verification_code(self):
         await self._api.async_send_verification_code(

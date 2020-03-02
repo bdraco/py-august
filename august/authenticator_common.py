@@ -129,22 +129,6 @@ class AuthenticatorCommon:
 
         return self._authentication
 
-    def validate_verification_code(self, verification_code):
-        if not verification_code:
-            return ValidationResult.INVALID_VERIFICATION_CODE
-
-        try:
-            self._api.validate_verification_code(
-                self._authentication.access_token,
-                self._login_method,
-                self._username,
-                verification_code,
-            )
-        except requests.exceptions.RequestException:
-            return ValidationResult.INVALID_VERIFICATION_CODE
-
-        return ValidationResult.VALIDATED
-
     def should_refresh(self):
         return self._authentication.state == AuthenticationState.AUTHENTICATED and (
             (self._authentication.parsed_expiration_time() - datetime.now(timezone.utc))
