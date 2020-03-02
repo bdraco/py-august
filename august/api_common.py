@@ -1,9 +1,6 @@
 """Api functions common between sync and async."""
 
 import json
-import dateutil.parser
-
-from requests.exceptions import HTTPError
 
 from august.activity import (
     ACTIVITY_ACTIONS_DOOR_OPERATION,
@@ -19,12 +16,9 @@ from august.activity import (
 )
 from august.doorbell import Doorbell
 from august.exceptions import AugustApiHTTPError
-from august.lock import (
-    Lock,
-    LockDoorStatus,
-    determine_door_state,
-    door_state_to_string,
-)
+from august.lock import Lock, LockDoorStatus, determine_door_state, door_state_to_string
+import dateutil.parser
+from requests.exceptions import HTTPError
 
 API_RETRY_TIME = 2.5
 API_RETRY_ATTEMPTS = 10
@@ -184,6 +178,7 @@ def _process_locks_json(json_dict):
 
 class ApiCommon:
     """Api dict shared between async and sync."""
+
     def _build_get_session_request(self, install_id, identifier, password):
         return {
             "method": "post",
@@ -285,7 +280,9 @@ class ApiCommon:
             "access_token": "access_token",
         }
 
-    def _build_call_lock_operation_request(self, url_str, access_token, lock_id, timeout):
+    def _build_call_lock_operation_request(
+        self, url_str, access_token, lock_id, timeout
+    ):
         return {
             "method": "put",
             "url": url_str.format(lock_id=lock_id),

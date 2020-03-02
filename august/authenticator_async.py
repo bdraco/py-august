@@ -4,14 +4,12 @@ import logging
 import os
 
 import aiofiles
-
 from aiohttp import ClientError
-
 from august.authenticator_common import (
-    ValidationResult,
-    AuthenticatorCommon,
     Authentication,
     AuthenticationState,
+    AuthenticatorCommon,
+    ValidationResult,
     from_authentication_json,
     to_authentication_json,
 )
@@ -102,7 +100,6 @@ class AuthenticatorAsync(AuthenticatorCommon):
             return ValidationResult.INVALID_VERIFICATION_CODE
 
         return ValidationResult.VALIDATED
-
 
     async def async_send_verification_code(self):
         await self._api.async_send_verification_code(

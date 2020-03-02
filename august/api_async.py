@@ -3,8 +3,7 @@
 import asyncio
 import logging
 
-
-from aiohttp import ClientSession, ClientResponseError
+from aiohttp import ClientResponseError, ClientSession
 from august.api_common import (
     API_LOCK_URL,
     API_RETRY_ATTEMPTS,
@@ -206,9 +205,11 @@ class ApiAsync(ApiCommon):
 
     async def async_refresh_access_token(self, access_token):
         """Obtain a new api token."""
-        return (await self._async_dict_to_api(
-            self._build_refresh_access_token_request(access_token)
-        )).headers[HEADER_AUGUST_ACCESS_TOKEN]
+        return (
+            await self._async_dict_to_api(
+                self._build_refresh_access_token_request(access_token)
+            )
+        ).headers[HEADER_AUGUST_ACCESS_TOKEN]
 
     async def _async_dict_to_api(self, api_dict):
         url = api_dict["url"]
@@ -255,8 +256,6 @@ class ApiAsync(ApiCommon):
         return response
 
 
-
-
 def _raise_response_exceptions(response):
     try:
         response.raise_for_status()
@@ -287,5 +286,3 @@ def _raise_response_exceptions(response):
                 response=err.response,
             ) from err
         raise err
-
-

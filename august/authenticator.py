@@ -4,10 +4,10 @@ import logging
 import os
 
 from august.authenticator_common import (
-    ValidationResult,
-    AuthenticatorCommon,
     Authentication,
     AuthenticationState,
+    AuthenticatorCommon,
+    ValidationResult,
     from_authentication_json,
     to_authentication_json,
 )
@@ -80,7 +80,6 @@ class Authenticator(AuthenticatorCommon):
 
         return authentication
 
-
     def validate_verification_code(self, verification_code):
         if not verification_code:
             return ValidationResult.INVALID_VERIFICATION_CODE
@@ -96,7 +95,6 @@ class Authenticator(AuthenticatorCommon):
             return ValidationResult.INVALID_VERIFICATION_CODE
 
         return ValidationResult.VALIDATED
-
 
     def send_verification_code(self):
         self._api.send_verification_code(
