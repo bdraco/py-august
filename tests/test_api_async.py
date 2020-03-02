@@ -1,6 +1,7 @@
 from datetime import datetime
 import os
 
+from aiohttp import ClientSession
 from aioresponses import aioresponses
 import aiounittest
 import august.activity
@@ -40,7 +41,7 @@ class TestApiAsync(aiounittest.AsyncTestCase):
     async def test_async_get_doorbells(self, mock):
         mock.get(API_GET_DOORBELLS_URL, body=load_fixture("get_doorbells.json"))
 
-        api = ApiAsync()
+        api = ApiAsync(ClientSession())
         doorbells = sorted(
             await api.async_get_doorbells(ACCESS_TOKEN), key=lambda d: d.device_id
         )
@@ -74,7 +75,7 @@ class TestApiAsync(aiounittest.AsyncTestCase):
         )
         mock.get(expected_doorbell_image_url, body="doorbell_image_mocked")
 
-        api = ApiAsync()
+        api = ApiAsync(ClientSession())
         doorbell = await api.async_get_doorbell_detail(ACCESS_TOKEN, "K98GiDT45GUL")
 
         self.assertEqual("K98GiDT45GUL", doorbell.device_id)
@@ -93,9 +94,9 @@ class TestApiAsync(aiounittest.AsyncTestCase):
         )
         self.assertEqual(True, doorbell.has_subscription)
         self.assertEqual(expected_doorbell_image_url, doorbell.image_url)
-        self.assertEqual(doorbell.get_doorbell_image(), b"doorbell_image_mocked")
         self.assertEqual(
-            doorbell.get_doorbell_image(timeout=50), b"doorbell_image_mocked"
+            await doorbell.async_get_doorbell_image(ClientSession()),
+            b"doorbell_image_mocked",
         )
 
     @aioresponses()
@@ -105,7 +106,7 @@ class TestApiAsync(aiounittest.AsyncTestCase):
             body=load_fixture("get_doorbell_missing_image.json"),
         )
 
-        api = ApiAsync()
+        api = ApiAsync(ClientSession())
         doorbell = await api.async_get_doorbell_detail(ACCESS_TOKEN, "K98GiDT45GUL")
 
         self.assertEqual("K98GiDT45GUL", doorbell.device_id)
@@ -128,7 +129,7 @@ class TestApiAsync(aiounittest.AsyncTestCase):
             body=load_fixture("get_doorbell.offline.json"),
         )
 
-        api = ApiAsync()
+        api = ApiAsync(ClientSession())
         doorbell = await api.async_get_doorbell_detail(ACCESS_TOKEN, "231ee2168dd0")
 
         self.assertEqual("231ee2168dd0", doorbell.device_id)
@@ -155,7 +156,7 @@ class TestApiAsync(aiounittest.AsyncTestCase):
             body=load_fixture("get_doorbell.battery_full.json"),
         )
 
-        api = ApiAsync()
+        api = ApiAsync(ClientSession())
         doorbell = await api.async_get_doorbell_detail(ACCESS_TOKEN, "did")
 
         self.assertEqual(100, doorbell.battery_level)
@@ -167,7 +168,7 @@ class TestApiAsync(aiounittest.AsyncTestCase):
             body=load_fixture("get_doorbell.battery_medium.json"),
         )
 
-        api = ApiAsync()
+        api = ApiAsync(ClientSession())
         doorbell = await api.async_get_doorbell_detail(ACCESS_TOKEN, "did")
 
         self.assertEqual(75, doorbell.battery_level)
@@ -179,7 +180,7 @@ class TestApiAsync(aiounittest.AsyncTestCase):
             body=load_fixture("get_doorbell.battery_low.json"),
         )
 
-        api = ApiAsync()
+        api = ApiAsync(ClientSession())
         doorbell = await api.async_get_doorbell_detail(ACCESS_TOKEN, "did")
 
         self.assertEqual(10, doorbell.battery_level)
@@ -188,8 +189,10 @@ class TestApiAsync(aiounittest.AsyncTestCase):
     async def test_async_get_locks(self, mock):
         mock.get(API_GET_LOCKS_URL, body=load_fixture("get_locks.json"))
 
-        api = ApiAsync()
-        locks = sorted(await api.async_get_locks(ACCESS_TOKEN), key=lambda d: d.device_id)
+        api = ApiAsync(ClientSession())
+        locks = sorted(
+            await api.async_get_locks(ACCESS_TOKEN), key=lambda d: d.device_id
+        )
 
         self.assertEqual(2, len(locks))
 
@@ -209,7 +212,7 @@ class TestApiAsync(aiounittest.AsyncTestCase):
     async def test_async_get_operable_locks(self, mock):
         mock.get(API_GET_LOCKS_URL, body=load_fixture("get_locks.json"))
 
-        api = ApiAsync()
+        api = ApiAsync(ClientSession())
         locks = await api.async_get_operable_locks(ACCESS_TOKEN)
 
         self.assertEqual(1, len(locks))
@@ -227,7 +230,7 @@ class TestApiAsync(aiounittest.AsyncTestCase):
             body=load_fixture("get_lock.online_with_doorsense.json"),
         )
 
-        api = ApiAsync()
+        api = ApiAsync(ClientSession())
         lock = await api.async_get_lock_detail(ACCESS_TOKEN, "ABC")
 
         self.assertEqual("ABC", lock.device_id)
@@ -261,7 +264,7 @@ class TestApiAsync(aiounittest.AsyncTestCase):
             body=load_fixture("get_lock.online.json"),
         )
 
-        api = ApiAsync()
+        api = ApiAsync(ClientSession())
         lock = await api.async_get_lock_detail(
             ACCESS_TOKEN, "A6697750D607098BAE8D6BAA11EF8063"
         )
@@ -297,7 +300,7 @@ class TestApiAsync(aiounittest.AsyncTestCase):
             body=load_fixture("get_lock.offline.json"),
         )
 
-        api = ApiAsync()
+        api = ApiAsync(ClientSession())
         lock = await api.async_get_lock_detail(ACCESS_TOKEN, "ABC")
 
         self.assertEqual("ABC", lock.device_id)
@@ -324,7 +327,7 @@ class TestApiAsync(aiounittest.AsyncTestCase):
             body=load_fixture("get_lock.doorsense_init.json"),
         )
 
-        api = ApiAsync()
+        api = ApiAsync(ClientSession())
         lock = await api.async_get_lock_detail(
             ACCESS_TOKEN, "A6697750D607098BAE8D6BAA11EF8063"
         )
@@ -376,7 +379,7 @@ class TestApiAsync(aiounittest.AsyncTestCase):
             body='{"status": "kAugLockState_Locked"}',
         )
 
-        api = ApiAsync()
+        api = ApiAsync(ClientSession())
         status = await api.async_get_lock_status(ACCESS_TOKEN, lock_id)
 
         self.assertEqual(LockStatus.LOCKED, status)
@@ -390,7 +393,7 @@ class TestApiAsync(aiounittest.AsyncTestCase):
             ',"doorState": "kAugLockDoorState_Closed"}',
         )
 
-        api = ApiAsync()
+        api = ApiAsync(ClientSession())
         status, door_status = await api.async_get_lock_status(
             ACCESS_TOKEN, lock_id, True
         )
@@ -406,7 +409,7 @@ class TestApiAsync(aiounittest.AsyncTestCase):
             body='{"status": "kAugLockState_Unlocked"}',
         )
 
-        api = ApiAsync()
+        api = ApiAsync(ClientSession())
         status = await api.async_get_lock_status(ACCESS_TOKEN, lock_id)
 
         self.assertEqual(LockStatus.UNLOCKED, status)
@@ -419,7 +422,7 @@ class TestApiAsync(aiounittest.AsyncTestCase):
             body='{"status": "not_advertising"}',
         )
 
-        api = ApiAsync()
+        api = ApiAsync(ClientSession())
         status = await api.async_get_lock_status(ACCESS_TOKEN, lock_id)
 
         self.assertEqual(LockStatus.UNKNOWN, status)
@@ -432,7 +435,7 @@ class TestApiAsync(aiounittest.AsyncTestCase):
             body='{"doorState": "kAugLockDoorState_Closed"}',
         )
 
-        api = ApiAsync()
+        api = ApiAsync(ClientSession())
         door_status = await api.async_get_lock_door_status(ACCESS_TOKEN, lock_id)
 
         self.assertEqual(LockDoorStatus.CLOSED, door_status)
@@ -445,7 +448,7 @@ class TestApiAsync(aiounittest.AsyncTestCase):
             body='{"doorState": "kAugLockDoorState_Open"}',
         )
 
-        api = ApiAsync()
+        api = ApiAsync(ClientSession())
         door_status = await api.async_get_lock_door_status(ACCESS_TOKEN, lock_id)
 
         self.assertEqual(LockDoorStatus.OPEN, door_status)
@@ -459,7 +462,7 @@ class TestApiAsync(aiounittest.AsyncTestCase):
             ',"doorState": "kAugLockDoorState_Open"}',
         )
 
-        api = ApiAsync()
+        api = ApiAsync(ClientSession())
         door_status, status = await api.async_get_lock_door_status(
             ACCESS_TOKEN, lock_id, True
         )
@@ -475,7 +478,7 @@ class TestApiAsync(aiounittest.AsyncTestCase):
             body='{"doorState": "not_advertising"}',
         )
 
-        api = ApiAsync()
+        api = ApiAsync(ClientSession())
         door_status = await api.async_get_lock_door_status(ACCESS_TOKEN, lock_id)
 
         self.assertEqual(LockDoorStatus.UNKNOWN, door_status)
@@ -485,7 +488,7 @@ class TestApiAsync(aiounittest.AsyncTestCase):
         lock_id = 1234
         mock.put(API_LOCK_URL.format(lock_id=lock_id), body=load_fixture("lock.json"))
 
-        api = ApiAsync()
+        api = ApiAsync(ClientSession())
         status = await api.async_lock(ACCESS_TOKEN, lock_id)
 
         self.assertEqual(LockStatus.LOCKED, status)
@@ -497,7 +500,7 @@ class TestApiAsync(aiounittest.AsyncTestCase):
             API_UNLOCK_URL.format(lock_id=lock_id), body=load_fixture("unlock.json"),
         )
 
-        api = ApiAsync()
+        api = ApiAsync(ClientSession())
         status = await api.async_unlock(ACCESS_TOKEN, lock_id)
 
         self.assertEqual(LockStatus.UNLOCKED, status)
@@ -507,7 +510,7 @@ class TestApiAsync(aiounittest.AsyncTestCase):
         lock_id = 1234
         mock.put(API_LOCK_URL.format(lock_id=lock_id), body=load_fixture("lock.json"))
 
-        api = ApiAsync()
+        api = ApiAsync(ClientSession())
         activities = await api.async_lock_return_activities(ACCESS_TOKEN, lock_id)
         expected_lock_dt = (
             dateutil.parser.parse("2020-02-19T19:44:54.371Z")
@@ -536,7 +539,7 @@ class TestApiAsync(aiounittest.AsyncTestCase):
             API_UNLOCK_URL.format(lock_id=lock_id), body=load_fixture("unlock.json"),
         )
 
-        api = ApiAsync()
+        api = ApiAsync(ClientSession())
         activities = await api.async_unlock_return_activities(ACCESS_TOKEN, lock_id)
         expected_unlock_dt = (
             dateutil.parser.parse("2020-02-19T19:44:26.745Z")
@@ -568,7 +571,7 @@ class TestApiAsync(aiounittest.AsyncTestCase):
             body=load_fixture("lock_without_doorstate.json"),
         )
 
-        api = ApiAsync()
+        api = ApiAsync(ClientSession())
         activities = await api.async_lock_return_activities(ACCESS_TOKEN, lock_id)
         expected_lock_dt = (
             dateutil.parser.parse("2020-02-19T19:44:54.371Z")
@@ -594,7 +597,7 @@ class TestApiAsync(aiounittest.AsyncTestCase):
             body=load_fixture("unlock_without_doorstate.json"),
         )
 
-        api = ApiAsync()
+        api = ApiAsync(ClientSession())
         activities = await api.async_unlock_return_activities(ACCESS_TOKEN, lock_id)
         expected_unlock_dt = (
             dateutil.parser.parse("2020-02-19T19:44:26.745Z")
@@ -621,7 +624,7 @@ class TestApiAsync(aiounittest.AsyncTestCase):
             '"valid":true}',
         )
 
-        api = ApiAsync()
+        api = ApiAsync(ClientSession())
         status = await api.async_lock(ACCESS_TOKEN, lock_id)
 
         self.assertEqual(LockStatus.LOCKED, status)
@@ -631,7 +634,7 @@ class TestApiAsync(aiounittest.AsyncTestCase):
         lock_id = 1234
         mock.put(API_UNLOCK_URL.format(lock_id=lock_id), body='{"status": "unlocked"}')
 
-        api = ApiAsync()
+        api = ApiAsync(ClientSession())
         status = await api.async_unlock(ACCESS_TOKEN, lock_id)
 
         self.assertEqual(LockStatus.UNLOCKED, status)
@@ -644,7 +647,7 @@ class TestApiAsync(aiounittest.AsyncTestCase):
             body=load_fixture("get_pins.json"),
         )
 
-        api = ApiAsync()
+        api = ApiAsync(ClientSession())
         pins = await api.async_get_pins(ACCESS_TOKEN, lock_id)
 
         self.assertEqual(1, len(pins))
@@ -671,11 +674,11 @@ class TestApiAsync(aiounittest.AsyncTestCase):
     async def test_async_get_house_activities(self, mock):
         house_id = 1234
         mock.get(
-            API_GET_HOUSE_ACTIVITIES_URL.format(house_id=house_id),
+            API_GET_HOUSE_ACTIVITIES_URL.format(house_id=house_id) + "?limit=8",
             body=load_fixture("get_house_activities.json"),
         )
 
-        api = ApiAsync()
+        api = ApiAsync(ClientSession())
         activities = await api.async_get_house_activities(ACCESS_TOKEN, house_id)
 
         self.assertEqual(10, len(activities))
@@ -690,5 +693,3 @@ class TestApiAsync(aiounittest.AsyncTestCase):
         self.assertIsInstance(activities[7], august.activity.DoorOperationActivity)
         self.assertIsInstance(activities[8], august.activity.LockOperationActivity)
         self.assertIsInstance(activities[9], august.activity.LockOperationActivity)
-
-

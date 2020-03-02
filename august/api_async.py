@@ -1,39 +1,32 @@
 """Api calls for sync."""
 
 import asyncio
-
-from aiohttp import ClientSession
-
 import logging
 
-from august.doorbell import DoorbellDetail
-from august.lock import (
-    LockDetail,
-    determine_door_state,
-    determine_lock_status,
-)
-from august.pin import Pin
-
+from aiohttp import ClientSession
 from august.api_common import (
-    _raise_response_exceptions,
+    API_LOCK_URL,
+    API_RETRY_ATTEMPTS,
+    API_RETRY_TIME,
+    API_UNLOCK_URL,
+    HEADER_AUGUST_ACCESS_TOKEN,
+    ApiCommon,
+    _api_headers,
     _convert_lock_result_to_activities,
     _process_activity_json,
     _process_doorbells_json,
     _process_locks_json,
-    _api_headers,
-    API_RETRY_TIME,
-    API_RETRY_ATTEMPTS,
-    API_LOCK_URL,
-    API_UNLOCK_URL,
-    HEADER_AUGUST_ACCESS_TOKEN,
-    ApiCommon,
+    _raise_response_exceptions,
 )
+from august.doorbell import DoorbellDetail
+from august.lock import LockDetail, determine_door_state, determine_lock_status
+from august.pin import Pin
 
 _LOGGER = logging.getLogger(__name__)
 
 
 class ApiAsync(ApiCommon):
-    def __init__(self, timeout=10, command_timeout=60, aiohttp_session=ClientSession()):
+    def __init__(self, aiohttp_session, timeout=10, command_timeout=60):
         self._timeout = timeout
         self._command_timeout = command_timeout
         self._aiohttp_session = aiohttp_session
@@ -182,7 +175,7 @@ class ApiAsync(ApiCommon):
         will include the current door state.
         """
         return _convert_lock_result_to_activities(
-            await self._lock(access_token, lock_id)
+            await self._async_lock(access_token, lock_id)
         )
 
     async def _async_unlock(self, access_token, lock_id):
