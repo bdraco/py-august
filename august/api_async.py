@@ -241,7 +241,7 @@ class ApiAsync(ApiCommon):
             attempts += 1
             response = await self._aiohttp_session.request(method, url, **api_dict)
             _LOGGER.debug(
-                "Received API response: %s, %s", response.status, response.content
+                "Received API response: %s, %s", response.status, await response.read()
             )
             if response.status == 429:
                 _LOGGER.debug(
