@@ -1,15 +1,13 @@
 import base64
-import json
-import logging
-import os
-import uuid
 from datetime import datetime, timedelta, timezone
 from enum import Enum
-
-import dateutil.parser
-import requests
+import json
+import logging
+import uuid
 
 from august.api import HEADER_AUGUST_ACCESS_TOKEN
+import dateutil.parser
+import requests
 
 # The default time before expiration to refresh a token
 DEFAULT_RENEWAL_THRESHOLD = timedelta(days=7)
@@ -90,7 +88,7 @@ class ValidationResult(Enum):
     INVALID_VERIFICATION_CODE = "invalid_verification_code"
 
 
-class Authenticator:
+class AuthenticatorCommon:
     def __init__(
         self,
         api,
@@ -105,63 +103,18 @@ class Authenticator:
         self._login_method = login_method
         self._username = username
         self._password = password
+        self._install_id = install_id
         self._access_token_cache_file = access_token_cache_file
         self._access_token_renewal_threshold = access_token_renewal_threshold
+        self._authentication = None
 
-        if access_token_cache_file is not None and os.path.exists(
-            access_token_cache_file
-        ):
-            with open(access_token_cache_file, "r") as file:
-                try:
-                    self._authentication = from_authentication_json(json.load(file))
-
-                    # If token is to expire within 7 days then print a warning.
-                    if self._authentication.is_expired():
-                        _LOGGER.error("Token has expired.")
-                        self._authentication = Authentication(
-                            AuthenticationState.REQUIRES_AUTHENTICATION,
-                            install_id=install_id,
-                        )
-                    # If token is not expired but less then 7 days before it
-                    # will.
-                    elif (
-                        self._authentication.parsed_expiration_time()
-                        - datetime.now(timezone.utc)
-                    ) < timedelta(days=7):
-                        exp_time = self._authentication.access_token_expires
-                        _LOGGER.warning(
-                            "API Token is going to expire at %s "
-                            "hours. Deleting file %s will result "
-                            "in a new token being requested next"
-                            " time",
-                            exp_time,
-                            access_token_cache_file,
-                        )
-                    return
-                except json.decoder.JSONDecodeError as error:
-                    _LOGGER.error(
-                        "Unable to read cache file (%s): %s",
-                        access_token_cache_file,
-                        error,
-                    )
-
-        self._authentication = Authentication(
-            AuthenticationState.REQUIRES_AUTHENTICATION, install_id=install_id
-        )
-
-    def authenticate(self):
-        if self._authentication.state == AuthenticationState.AUTHENTICATED:
-            return self._authentication
-
-        identifier = self._login_method + ":" + self._username
-        install_id = self._authentication.install_id
-        response = self._api.get_session(install_id, identifier, self._password)
-
-        data = response.json()
-        access_token = response.headers[HEADER_AUGUST_ACCESS_TOKEN]
-        access_token_expires = data["expiresAt"]
-        v_password = data["vPassword"]
-        v_install_id = data["vInstallId"]
+    def _authentication_from_session_response(
+        self, install_id, response_headers, json_dict
+    ):
+        access_token = response_headers[HEADER_AUGUST_ACCESS_TOKEN]
+        access_token_expires = json_dict["expiresAt"]
+        v_password = json_dict["vPassword"]
+        v_install_id = json_dict["vInstallId"]
 
         if not v_password:
             state = AuthenticationState.BAD_PASSWORD
@@ -174,17 +127,7 @@ class Authenticator:
             state, install_id, access_token, access_token_expires
         )
 
-        if state == AuthenticationState.AUTHENTICATED:
-            self._cache_authentication(self._authentication)
-
         return self._authentication
-
-    def send_verification_code(self):
-        self._api.send_verification_code(
-            self._authentication.access_token, self._login_method, self._username
-        )
-
-        return True
 
     def validate_verification_code(self, verification_code):
         if not verification_code:
@@ -208,17 +151,7 @@ class Authenticator:
             < self._access_token_renewal_threshold
         )
 
-    def refresh_access_token(self, force=False):
-        if not self.should_refresh() and not force:
-            return self._authentication
-
-        if self._authentication.state != AuthenticationState.AUTHENTICATED:
-            _LOGGER.warning("Tried to refresh access token when not authenticated")
-            return self._authentication
-
-        refreshed_token = self._api.refresh_access_token(
-            self._authentication.access_token
-        )
+    def _process_refreshed_access_token(self, refreshed_token):
         jwt_parts = refreshed_token.split(".")
         jwt_claims = json.loads(base64.b64decode(jwt_parts[1] + "==="))
 
@@ -238,12 +171,6 @@ class Authenticator:
             access_token=refreshed_token,
             access_token_expires=new_expiration.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
         )
-        self._cache_authentication(self._authentication)
 
         _LOGGER.info("Successfully refreshed access token")
         return self._authentication
-
-    def _cache_authentication(self, authentication):
-        if self._access_token_cache_file is not None:
-            with open(self._access_token_cache_file, "w") as file:
-                file.write(to_authentication_json(authentication))
