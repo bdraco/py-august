@@ -3,7 +3,8 @@
 import asyncio
 import logging
 
-from aiohttp import ClientResponseError, ClientSession
+from august.exceptions import AugustApiHTTPError
+from aiohttp import ClientResponseError
 from august.api_common import (
     API_LOCK_URL,
     API_RETRY_ATTEMPTS,
@@ -260,29 +261,16 @@ def _raise_response_exceptions(response):
     try:
         response.raise_for_status()
     except ClientResponseError as err:
-        if err.response.status == 422:
-            raise AugustApiHTTPError(
+        if err.status == 422:
+            raise AugustApiAIOHTTPError(
                 "The operation failed because the bridge (connect) is offline.",
-                response=err.response,
             ) from err
-        if err.response.status == 423:
-            raise AugustApiHTTPError(
+        if err.status == 423:
+            raise AugustApiAIOHTTPError(
                 "The operation failed because the bridge (connect) is in use.",
-                response=err.response,
             ) from err
-        if err.response.status == 408:
-            raise AugustApiHTTPError(
+        if err.status == 408:
+            raise AugustApiAIOHTTPError(
                 "The operation timed out because the bridge (connect) failed to respond.",
-                response=err.response,
-            ) from err
-        if err.response.headers.get("content-type") == "application/json":
-            # 4XX and 5XX errors return a json error
-            # like b'{"code":97,"message":"Bridge in use"}'
-            # that is user consumable
-            json_dict = json.loads(err.response.content)
-            failure_message = json_dict.get("message")
-            raise AugustApiHTTPError(
-                "The operation failed because: " + failure_message,
-                response=err.response,
             ) from err
         raise err

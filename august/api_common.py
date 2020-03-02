@@ -15,7 +15,6 @@ from august.activity import (
     LockOperationActivity,
 )
 from august.doorbell import Doorbell
-from august.exceptions import AugustApiHTTPError
 from august.lock import Lock, LockDoorStatus, determine_door_state, door_state_to_string
 import dateutil.parser
 from requests.exceptions import HTTPError
