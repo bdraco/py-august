@@ -1,5 +1,6 @@
 """Api calls for sync."""
 
+import json
 import logging
 import time
 
@@ -16,11 +17,12 @@ from august.api_common import (
     _process_doorbells_json,
     _process_locks_json,
 )
-from august.exceptions import AugustApiHTTPError
 from august.doorbell import DoorbellDetail
+from august.exceptions import AugustApiHTTPError
 from august.lock import LockDetail, determine_door_state, determine_lock_status
 from august.pin import Pin
 from requests import Session, request
+from requests.exceptions import HTTPError
 
 _LOGGER = logging.getLogger(__name__)
 

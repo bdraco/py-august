@@ -3,7 +3,6 @@
 import asyncio
 import logging
 
-from august.exceptions import AugustApiHTTPError
 from aiohttp import ClientResponseError
 from august.api_common import (
     API_LOCK_URL,
@@ -19,6 +18,7 @@ from august.api_common import (
     _process_locks_json,
 )
 from august.doorbell import DoorbellDetail
+from august.exceptions import AugustApiAIOHTTPError
 from august.lock import LockDetail, determine_door_state, determine_lock_status
 from august.pin import Pin
 

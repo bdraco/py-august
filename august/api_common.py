@@ -73,38 +73,6 @@ def _api_headers(access_token=None):
     return headers
 
 
-def _raise_response_exceptions(response):
-    try:
-        response.raise_for_status()
-    except HTTPError as err:
-        if err.response.status_code == 422:
-            raise AugustApiHTTPError(
-                "The operation failed because the bridge (connect) is offline.",
-                response=err.response,
-            ) from err
-        if err.response.status_code == 423:
-            raise AugustApiHTTPError(
-                "The operation failed because the bridge (connect) is in use.",
-                response=err.response,
-            ) from err
-        if err.response.status_code == 408:
-            raise AugustApiHTTPError(
-                "The operation timed out because the bridge (connect) failed to respond.",
-                response=err.response,
-            ) from err
-        if err.response.headers.get("content-type") == "application/json":
-            # 4XX and 5XX errors return a json error
-            # like b'{"code":97,"message":"Bridge in use"}'
-            # that is user consumable
-            json_dict = json.loads(err.response.content)
-            failure_message = json_dict.get("message")
-            raise AugustApiHTTPError(
-                "The operation failed because: " + failure_message,
-                response=err.response,
-            ) from err
-        raise err
-
-
 def _convert_lock_result_to_activities(lock_json_dict):
     activities = []
     lock_info_json_dict = lock_json_dict.get("info", {})

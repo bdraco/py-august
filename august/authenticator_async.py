@@ -81,7 +81,7 @@ class AuthenticatorAsync(AuthenticatorCommon):
         )
 
         if authentication.state == AuthenticationState.AUTHENTICATED:
-            self._async_cache_authentication(authentication)
+            await self._async_cache_authentication(authentication)
 
         return authentication
 
@@ -121,7 +121,7 @@ class AuthenticatorAsync(AuthenticatorCommon):
         )
 
         authentication = self._process_refreshed_access_token(refreshed_token)
-        self._async_cache_authentication(authentication)
+        await self._async_cache_authentication(authentication)
         return authentication
 
     async def _async_cache_authentication(self, authentication):

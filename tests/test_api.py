@@ -3,7 +3,7 @@ import os
 import unittest
 
 import august.activity
-from august.api import Api
+from august.api import Api, _raise_response_exceptions
 from august.api_common import (
     API_GET_DOORBELL_URL,
     API_GET_DOORBELLS_URL,
@@ -14,7 +14,6 @@ from august.api_common import (
     API_GET_PINS_URL,
     API_LOCK_URL,
     API_UNLOCK_URL,
-    _raise_response_exceptions,
 )
 from august.bridge import BridgeDetail, BridgeStatus, BridgeStatusDetail
 from august.exceptions import AugustApiHTTPError

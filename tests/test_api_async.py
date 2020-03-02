@@ -1,11 +1,13 @@
 from datetime import datetime
 import os
 
-from aiohttp import ClientSession
+from aiohttp import ClientError, ClientResponse, ClientSession
+from aiohttp.helpers import TimerNoop
 from aioresponses import aioresponses
 import aiounittest
+from asynctest import mock
 import august.activity
-from august.api_async import ApiAsync
+from august.api_async import ApiAsync, _raise_response_exceptions
 from august.api_common import (
     API_GET_DOORBELL_URL,
     API_GET_DOORBELLS_URL,
@@ -18,9 +20,11 @@ from august.api_common import (
     API_UNLOCK_URL,
 )
 from august.bridge import BridgeDetail, BridgeStatus, BridgeStatusDetail
+from august.exceptions import AugustApiAIOHTTPError
 from august.lock import LockDoorStatus, LockStatus
 import dateutil.parser
 from dateutil.tz import tzlocal, tzutc
+from yarl import URL
 
 ACCESS_TOKEN = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9"
 
@@ -693,3 +697,73 @@ class TestApiAsync(aiounittest.AsyncTestCase):
         self.assertIsInstance(activities[7], august.activity.DoorOperationActivity)
         self.assertIsInstance(activities[8], august.activity.LockOperationActivity)
         self.assertIsInstance(activities[9], august.activity.LockOperationActivity)
+
+    def test__raise_response_exceptions(self):
+        loop = mock.Mock()
+        request_info = mock.Mock()
+        request_info.status.return_value = 428
+        session = ClientSession()
+        four_two_eight = MockedResponse(
+            "get",
+            URL("http://code404.tld"),
+            request_info=request_info,
+            writer=mock.Mock(),
+            continue100=None,
+            timer=TimerNoop(),
+            traces=[],
+            status=404,
+            loop=loop,
+            session=session,
+        )
+
+        try:
+            _raise_response_exceptions(four_two_eight)
+        except Exception as err:
+            self.assertIsInstance(err, ClientError)
+            self.assertNotIsInstance(err, AugustApiAIOHTTPError)
+
+        ERROR_MAP = {
+            422: "The operation failed because the bridge (connect) is offline.",
+            423: "The operation failed because the bridge (connect) is in use.",
+            408: "The operation timed out because the bridge (connect) failed to respond.",
+        }
+
+        for status_code in ERROR_MAP:
+            mocked_response = MockedResponse(
+                "get",
+                URL("http://code.any.tld"),
+                request_info=request_info,
+                writer=mock.Mock(),
+                continue100=None,
+                timer=TimerNoop(),
+                traces=[],
+                status=status_code,
+                loop=loop,
+                session=session,
+            )
+
+            try:
+                _raise_response_exceptions(mocked_response)
+            except AugustApiAIOHTTPError as err:
+                self.assertEqual(str(err), ERROR_MAP[status_code])
+
+
+class MockedResponse(ClientResponse):
+    def __init__(self, *args, **kwargs):
+        content = kwargs.pop("content", None)
+        status = kwargs.pop("status", None)
+        super(MockedResponse, self).__init__(*args, **kwargs)
+        self._mocked_content = content
+        self._mocked_status = status
+
+    @property
+    def content(self):
+        return self._mocked_content
+
+    @property
+    def reason(self):
+        return self._mocked_status
+
+    @property
+    def status(self):
+        return self._mocked_status
