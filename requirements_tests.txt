@@ -7,4 +7,6 @@ pytest-cov
 requests_mock
 aioresponses
 aiounittest
+aiofiles
+aiohttp
 tox
