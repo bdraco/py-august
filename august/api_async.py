@@ -275,6 +275,11 @@ async def _async_raise_response_exceptions(response):
             ) from err
         if err.status > 400:
             error_text = await response.text()
+            _LOGGER.warn(
+                "Unknown error from august api status=%s and text=%s",
+                err.status,
+                error_text,
+            )
             raise AugustApiAIOHTTPError(
                 f"The operation failed because of unknown error: {error_text}"
             ) from err
