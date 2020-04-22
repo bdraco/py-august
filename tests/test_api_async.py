@@ -7,7 +7,7 @@ from aioresponses import aioresponses, CallbackResult
 import aiounittest
 from asynctest import mock
 import august.activity
-from august.api_async import ApiAsync, _raise_response_exceptions
+from august.api_async import ApiAsync, _async_raise_response_exceptions
 from august.api_common import (
     API_VALIDATE_VERIFICATION_CODE_URLS,
     API_GET_DOORBELL_URL,
@@ -717,7 +717,7 @@ class TestApiAsync(aiounittest.AsyncTestCase):
         )
         assert last_args["json"] == {"code": "123456", "email": "emailaddress"}
 
-    def test__raise_response_exceptions(self):
+    def test__async_raise_response_exceptions(self):
         loop = mock.Mock()
         request_info = mock.Mock()
         request_info.status.return_value = 428
@@ -736,7 +736,7 @@ class TestApiAsync(aiounittest.AsyncTestCase):
         )
 
         try:
-            _raise_response_exceptions(four_two_eight)
+            _async_raise_response_exceptions(four_two_eight)
         except Exception as err:
             self.assertIsInstance(err, ClientError)
             self.assertNotIsInstance(err, AugustApiAIOHTTPError)
@@ -762,7 +762,7 @@ class TestApiAsync(aiounittest.AsyncTestCase):
             )
 
             try:
-                _raise_response_exceptions(mocked_response)
+                _async_raise_response_exceptions(mocked_response)
             except AugustApiAIOHTTPError as err:
                 self.assertEqual(str(err), ERROR_MAP[status_code])
 

@@ -252,12 +252,12 @@ class ApiAsync(ApiCommon):
                 continue
             break
 
-        _raise_response_exceptions(response)
+        await _async_raise_response_exceptions(response)
 
         return response
 
 
-def _raise_response_exceptions(response):
+async def _async_raise_response_exceptions(response):
     try:
         response.raise_for_status()
     except ClientResponseError as err:
@@ -272,5 +272,10 @@ def _raise_response_exceptions(response):
         if err.status == 408:
             raise AugustApiAIOHTTPError(
                 "The operation timed out because the bridge (connect) failed to respond.",
+            ) from err
+        if err.status > 400:
+            error_text = await response.text()
+            raise AugustApiAIOHTTPError(
+                f"The operation failed because of unknown error: {error_text}"
             ) from err
         raise err
