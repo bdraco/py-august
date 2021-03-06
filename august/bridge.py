@@ -10,7 +10,9 @@ class BridgeStatus(Enum):
 
 class BridgeDetail(DeviceDetail):
     def __init__(self, house_id, data):
-        super().__init__(data["_id"], None, house_id, None, data["firmwareVersion"])
+        super().__init__(
+            data["_id"], None, house_id, None, data["firmwareVersion"], None
+        )
 
         self._operative = data["operative"]
 
